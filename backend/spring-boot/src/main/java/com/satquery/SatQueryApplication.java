@@ -19,12 +19,16 @@ public class SatQueryApplication {
     /**
      * RestTemplate with explicit connect and read timeouts.
      *
-     * On Render free-tier, Python microservices (nlp-service, data-service, eo-analysis-service)
-     * may be sleeping and take 20-30s to cold-start. Without timeouts, RestTemplate will block
-     * indefinitely and cause the Spring Boot gateway to return empty results silently.
+     * On Render free-tier, Python microservices (nlp-service, data-service,
+     * eo-analysis-service)
+     * may be sleeping and take 20-30s to cold-start. Without timeouts, RestTemplate
+     * will block
+     * indefinitely and cause the Spring Boot gateway to return empty results
+     * silently.
      *
      * connect-timeout: time to establish TCP connection (set to 10s)
-     * read-timeout:    time to wait for response after connection (set to 30s for cold-start tolerance)
+     * read-timeout: time to wait for response after connection (set to 30s for
+     * cold-start tolerance)
      */
     @Bean
     public RestTemplate restTemplate(
