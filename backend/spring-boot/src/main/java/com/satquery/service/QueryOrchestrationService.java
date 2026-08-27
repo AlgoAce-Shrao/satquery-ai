@@ -1,12 +1,11 @@
 package com.satquery.service;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpStatus;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.*;
@@ -33,18 +32,26 @@ public class QueryOrchestrationService {
 
     @SuppressWarnings("unchecked")
     public Map<String, Object> executeQueryPipeline(String rawQuery) {
-        // Step 1: Call NLP Service
+        log.info("Pipeline START — query: \"{}\"", rawQuery);
+        log.info("Downstream URLs — NLP: {} | DATA: {} | EO: {}", nlpServiceUrl, dataServiceUrl, eoServiceUrl);
+
+        // ── Step 1: NLP Service ────────────────────────────────────────────────────
         Map<String, Object> nlpPayload = Map.of("raw_query", rawQuery);
         Map<String, Object> structuredQuery;
         try {
+            log.info("Calling NLP service at {}/api/v1/nlp/parse", nlpServiceUrl);
             ResponseEntity<Map> nlpRes = restTemplate.postForEntity(
                 nlpServiceUrl + "/api/v1/nlp/parse",
                 nlpPayload,
                 Map.class
             );
             structuredQuery = nlpRes.getBody();
+            log.info("NLP returned intent={} metric={}", structuredQuery.get("intent"), structuredQuery.get("metric"));
+        } catch (ResourceAccessException e) {
+            log.error("NLP service unreachable or timed out ({}). Using rule-based fallback. Cause: {}", nlpServiceUrl, e.getMessage());
+            structuredQuery = createFallbackStructuredQuery(rawQuery);
         } catch (Exception e) {
-            log.warn("NLP service unavailable; using deterministic query parsing.", e);
+            log.error("NLP service unexpected error: {}", e.getMessage(), e);
             structuredQuery = createFallbackStructuredQuery(rawQuery);
         }
 
@@ -58,7 +65,7 @@ public class QueryOrchestrationService {
         Map<String, Object> spatialScope = (Map<String, Object>) structuredQuery.get("spatial_scope");
         String spatialName = spatialScope != null ? (String) spatialScope.get("name") : "Global";
 
-        // Step 2: Call Data Service (Spatial observations lookup)
+        // ── Step 2: Data Service ────────────────────────────────────────────────────
         Map<String, Object> spatialPayload = Map.of(
             "intent", intent,
             "metric", metric,
@@ -68,6 +75,7 @@ public class QueryOrchestrationService {
 
         List<Map<String, Object>> observations = new ArrayList<>();
         try {
+            log.info("Calling Data service at {}/api/v1/spatial/search — scope: {}", dataServiceUrl, spatialName);
             ResponseEntity<Map> dataRes = restTemplate.postForEntity(
                 dataServiceUrl + "/api/v1/spatial/search",
                 spatialPayload,
@@ -75,13 +83,17 @@ public class QueryOrchestrationService {
             );
             if (dataRes.getBody() != null && dataRes.getBody().containsKey("records")) {
                 observations = (List<Map<String, Object>>) dataRes.getBody().get("records");
+                log.info("Data service returned {} observation(s)", observations.size());
+            } else {
+                log.warn("Data service returned a body with no 'records' key: {}", dataRes.getBody());
             }
+        } catch (ResourceAccessException e) {
+            log.error("Data service unreachable or timed out ({}). Cause: {}", dataServiceUrl, e.getMessage());
         } catch (Exception e) {
-            log.error("Data service request failed.", e);
-            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "The spatial data service is unavailable.", e);
+            log.error("Data service unexpected error: {}", e.getMessage(), e);
         }
 
-        // Step 3: Call EO Analysis Service (Spectral math & delta synthesis)
+        // ── Step 3: EO Analysis Service ─────────────────────────────────────────────
         List<Map<String, Object>> analyzedResults = new ArrayList<>();
         if (!observations.isEmpty()) {
             Map<String, Object> eoPayload = Map.of(
@@ -92,6 +104,7 @@ public class QueryOrchestrationService {
             );
 
             try {
+                log.info("Calling EO Analysis service at {}/api/v1/eo/analyze — {} obs, metric: {}", eoServiceUrl, observations.size(), metric);
                 ResponseEntity<Map> eoRes = restTemplate.postForEntity(
                     eoServiceUrl + "/api/v1/eo/analyze",
                     eoPayload,
@@ -99,15 +112,28 @@ public class QueryOrchestrationService {
                 );
                 if (eoRes.getBody() != null && eoRes.getBody().containsKey("results")) {
                     analyzedResults = (List<Map<String, Object>>) eoRes.getBody().get("results");
+                    log.info("EO Analysis returned {} analyzed result(s)", analyzedResults.size());
+                } else {
+                    log.warn("EO Analysis returned a body with no 'results' key: {}", eoRes.getBody());
                 }
+            } catch (ResourceAccessException e) {
+                log.error("EO Analysis service unreachable or timed out ({}). Cause: {}", eoServiceUrl, e.getMessage());
             } catch (Exception e) {
-                log.error("EO analysis service request failed.", e);
-                throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "The EO analysis service is unavailable.", e);
+                log.error("EO Analysis service unexpected error: {}", e.getMessage(), e);
             }
+        } else {
+            log.warn("No observations returned by Data service — skipping EO Analysis step.");
         }
 
+        String queryId = (String) structuredQuery.getOrDefault(
+            "query_id",
+            "Q_" + UUID.randomUUID().toString().substring(0, 8).toUpperCase()
+        );
+
+        log.info("Pipeline COMPLETE — queryId: {} | results: {}", queryId, analyzedResults.size());
+
         return Map.of(
-            "queryId", structuredQuery.getOrDefault("query_id", "Q_" + UUID.randomUUID().toString().substring(0, 8).toUpperCase()),
+            "queryId", queryId,
             "rawQuery", rawQuery,
             "structuredQuery", structuredQuery,
             "results", analyzedResults,

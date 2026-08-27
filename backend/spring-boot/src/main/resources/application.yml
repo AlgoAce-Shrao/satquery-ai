@@ -9,7 +9,9 @@ spring:
     banner-mode: console
 
 services:
-  request-timeout-ms: ${DOWNSTREAM_REQUEST_TIMEOUT_MS:10000}
+  connect-timeout-ms: ${DOWNSTREAM_CONNECT_TIMEOUT_MS:10000}
+  # Render free-tier Python services may cold-start and take 20-30s to respond.
+  read-timeout-ms: ${DOWNSTREAM_READ_TIMEOUT_MS:30000}
   nlp:
     url: ${NLP_SERVICE_URL:http://localhost:8001}
   data:

@@ -173,8 +173,10 @@ export class QueryApiClient {
     rawQuery: string,
     onProgressUpdate?: (update: Partial<QueryExecutionState>) => void
   ): Promise<QueryApiResponse> {
+    // Render free-tier services can take 20-30s to wake from a cold start; give the
+    // pipeline (gateway + NLP/data/EO services) room to finish before giving up.
     const requestController = new AbortController();
-    const timeoutId = window.setTimeout(() => requestController.abort(), 15_000);
+    const timeoutId = window.setTimeout(() => requestController.abort(), 30_000);
     try {
       const endpoint = this.BASE_URL ? `${this.BASE_URL}/api/v1/query` : '/api/v1/query';
       const response = await fetch(endpoint, {
@@ -207,16 +209,16 @@ export class QueryApiClient {
           normalizeResult(result, index, typeof data.structuredQuery?.intent === 'string' ? data.structuredQuery.intent : undefined)
         ),
       };
-    } catch (err) {
+    } catch (err: any) {
       const error = requestController.signal.aborted
-        ? new Error('The analysis service did not respond within 15 seconds.')
+        ? new Error('The analysis service did not respond within 30 seconds (it may be waking from a cold start).')
         : err;
-      console.warn('Backend API unavailable, using in-memory engine fallback:', error);
+      console.warn('[QueryApiClient] Gateway unavailable, using in-memory engine fallback:', error);
     } finally {
       window.clearTimeout(timeoutId);
     }
 
-    // Client-side queryEngine execution with progressive stage transitions
+    // Client-side in-memory engine with progressive stage transitions
     return new Promise((resolve) => {
       queryEngine.executeQuery(rawQuery, (update) => {
         if (onProgressUpdate) onProgressUpdate(update);
