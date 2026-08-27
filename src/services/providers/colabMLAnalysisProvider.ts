@@ -11,6 +11,21 @@ import { AnalysisProvider } from './analysisProvider';
 import { AnalysisInput, ColabAnalyzeRequest, ColabAnalyzeResponse } from '../../types/upload';
 import { AnalysisResult, ExecutionPipelineStage } from '../../types/geospatial';
 
+async function serializeImage(image: AnalysisInput['images']['primary']) {
+  if (image.file) {
+    const buffer = await image.file.arrayBuffer();
+    const bytes = new Uint8Array(buffer);
+    const chunkSize = 0x8000;
+    let binary = '';
+    for (let offset = 0; offset < bytes.length; offset += chunkSize) {
+      binary += String.fromCharCode(...bytes.subarray(offset, offset + chunkSize));
+    }
+    return { dataBase64: btoa(binary) };
+  }
+
+  return { url: image.previewUrl };
+}
+
 export class ColabMLAnalysisProvider implements AnalysisProvider {
   public id = 'colab_ml_server';
   public name = 'Google Colab PyTorch Vision-Language Model Engine';
@@ -21,6 +36,7 @@ export class ColabMLAnalysisProvider implements AnalysisProvider {
   constructor(endpointUrl?: string) {
     this.endpointUrl =
       endpointUrl ||
+      (import.meta as any).env?.VITE_COLAB_INFERENCE_URL ||
       (import.meta as any).env?.VITE_COLAB_ML_SERVER_URL ||
       'http://localhost:8000';
   }
@@ -60,6 +76,11 @@ export class ColabMLAnalysisProvider implements AnalysisProvider {
     const primary = input.images.primary;
     const secondary = input.images.secondary;
 
+    const [primaryImage, secondaryImage] = await Promise.all([
+      serializeImage(primary),
+      secondary ? serializeImage(secondary) : undefined,
+    ]);
+
     const payload: ColabAnalyzeRequest = {
       query,
       task: input.validationReport.canExecuteAnalysis ? 'AUTO_DETECT' : 'GENERIC_VQA',
@@ -68,14 +89,14 @@ export class ColabMLAnalysisProvider implements AnalysisProvider {
         primary: {
           fileName: primary.fileName,
           modality: primary.modality,
-          url: primary.previewUrl,
+          ...primaryImage,
           metadata: primary.geospatialInfo,
         },
         secondary: secondary
           ? {
               fileName: secondary.fileName,
               modality: secondary.modality,
-              url: secondary.previewUrl,
+              ...secondaryImage,
               metadata: secondary.geospatialInfo,
             }
           : undefined,

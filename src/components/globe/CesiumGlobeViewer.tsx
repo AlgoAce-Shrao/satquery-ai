@@ -80,12 +80,12 @@ export const CesiumGlobeViewer: React.FC<CesiumGlobeViewerProps> = ({
   useEffect(() => {
     if (!containerRef.current) return;
 
-    // Configure Cesium Ion Access Token (fallback to default or Ion demo)
+    // Configure the optional Cesium Ion access token. ESRI imagery below works without it.
     if (!Cesium.Ion.defaultAccessToken) {
-      const customToken = (import.meta as unknown as { env?: Record<string, string> }).env?.VITE_CESIUM_ION_TOKEN;
-      Cesium.Ion.defaultAccessToken =
-        customToken ||
-        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJkZW1vLXRva2VuIiwiaWQiOjEyMzQsInNjb3BlcyI6WyJhc3NldHM6cmVhZCJdLCJpYXQiOjE2MDAwMDAwMDB9.dummy';
+      const customToken = (import.meta as unknown as { env?: Record<string, string> }).env?.VITE_CESIUM_ION_ACCESS_TOKEN;
+      if (customToken) {
+        Cesium.Ion.defaultAccessToken = customToken;
+      }
     }
 
     // Initialize Viewer
@@ -132,13 +132,16 @@ export const CesiumGlobeViewer: React.FC<CesiumGlobeViewerProps> = ({
           viewer.imageryLayers.removeAll();
           viewer.imageryLayers.addImageryProvider(provider);
         }
-      }).catch(() => {
-        // Fallback to TileMapService / OpenStreetMap
-        Cesium.createWorldImageryAsync().then((provider) => {
-          if (!viewer.isDestroyed()) {
-            viewer.imageryLayers.addImageryProvider(provider);
-          }
-        }).catch(() => {});
+      }).catch((error) => {
+        // This fallback does not require a Cesium Ion token.
+        console.warn('ESRI imagery is unavailable; falling back to OpenStreetMap.', error);
+        try {
+          viewer.imageryLayers.addImageryProvider(
+            new Cesium.OpenStreetMapImageryProvider({ url: 'https://tile.openstreetmap.org/' })
+          );
+        } catch (fallbackError) {
+          console.error('Unable to initialize a fallback imagery provider.', fallbackError);
+        }
       });
     } catch (e) {
       console.warn('Cesium imagery initialization fallback', e);

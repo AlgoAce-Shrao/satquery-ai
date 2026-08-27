@@ -1,14 +1,20 @@
 package com.satquery.service;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.*;
 
 @Service
 public class QueryOrchestrationService {
+
+    private static final Logger log = LoggerFactory.getLogger(QueryOrchestrationService.class);
 
     private final RestTemplate restTemplate;
 
@@ -38,6 +44,11 @@ public class QueryOrchestrationService {
             );
             structuredQuery = nlpRes.getBody();
         } catch (Exception e) {
+            log.warn("NLP service unavailable; using deterministic query parsing.", e);
+            structuredQuery = createFallbackStructuredQuery(rawQuery);
+        }
+
+        if (structuredQuery == null) {
             structuredQuery = createFallbackStructuredQuery(rawQuery);
         }
 
@@ -66,7 +77,8 @@ public class QueryOrchestrationService {
                 observations = (List<Map<String, Object>>) dataRes.getBody().get("records");
             }
         } catch (Exception e) {
-            // Log fallback
+            log.error("Data service request failed.", e);
+            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "The spatial data service is unavailable.", e);
         }
 
         // Step 3: Call EO Analysis Service (Spectral math & delta synthesis)
@@ -89,7 +101,8 @@ public class QueryOrchestrationService {
                     analyzedResults = (List<Map<String, Object>>) eoRes.getBody().get("results");
                 }
             } catch (Exception e) {
-                // Log fallback
+                log.error("EO analysis service request failed.", e);
+                throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "The EO analysis service is unavailable.", e);
             }
         }
 

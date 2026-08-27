@@ -24,11 +24,16 @@ export class SatQueryOrchestrator {
   private currentProvider: AnalysisProvider;
   private colabProvider: ColabMLAnalysisProvider;
   private mockProvider: MockAnalysisProvider;
+  private hasConfiguredRemoteProvider: boolean;
 
   private constructor() {
+    const configuredEndpoint =
+      (import.meta as any).env?.VITE_COLAB_INFERENCE_URL ||
+      (import.meta as any).env?.VITE_COLAB_ML_SERVER_URL;
     this.mockProvider = new MockAnalysisProvider();
-    this.colabProvider = new ColabMLAnalysisProvider();
-    this.currentProvider = this.mockProvider;
+    this.colabProvider = new ColabMLAnalysisProvider(configuredEndpoint);
+    this.hasConfiguredRemoteProvider = Boolean(configuredEndpoint);
+    this.currentProvider = this.hasConfiguredRemoteProvider ? this.colabProvider : this.mockProvider;
   }
 
   public static getInstance(): SatQueryOrchestrator {
@@ -44,7 +49,10 @@ export class SatQueryOrchestrator {
 
   public setProvider(type: 'MOCK' | 'COLAB', customUrl?: string) {
     if (type === 'COLAB') {
-      if (customUrl) this.colabProvider.setEndpointUrl(customUrl);
+      if (customUrl) {
+        this.colabProvider.setEndpointUrl(customUrl);
+        this.hasConfiguredRemoteProvider = true;
+      }
       this.currentProvider = this.colabProvider;
     } else {
       this.currentProvider = this.mockProvider;
@@ -126,11 +134,17 @@ export class SatQueryOrchestrator {
     query: string,
     onProgressStage?: (stage: ExecutionPipelineStage) => void
   ): Promise<AnalysisResult> {
-    // 1. Check if provider is available; fallback to mock if Colab is unreachable
+    // Production uploads must use a real inference endpoint; mock analysis is development-only.
     let activeProvider = this.currentProvider;
+    if (activeProvider.type === 'MOCK_RULE_ENGINE' && (import.meta as any).env?.PROD) {
+      throw new Error('Image analysis is not configured. Set VITE_COLAB_INFERENCE_URL to a public inference endpoint.');
+    }
     if (activeProvider.type === 'COLAB_ML_SERVER') {
       const isLive = await activeProvider.isAvailable();
       if (!isLive) {
+        if ((import.meta as any).env?.PROD) {
+          throw new Error('The configured image-analysis service is unavailable. Please try again later.');
+        }
         console.warn('Colab ML server unreachable. Auto-falling back to SatQuery Rule Engine.');
         activeProvider = this.mockProvider;
       }

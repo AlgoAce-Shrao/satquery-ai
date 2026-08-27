@@ -8,13 +8,6 @@ import * as THREE from 'three';
 import { createEOSatellite, SatelliteComponents } from './satelliteModel';
 import { sampleWaypointTimeline } from './chapterTimeline';
 
-// Public NASA Blue Marble + Black Marble textures (via Solar System Scope / three-globe CDN)
-// These are free-to-use NASA-derived textures
-const EARTH_DAY_URL = 'https://unpkg.com/three-globe/example/img/earth-day.jpg';
-const EARTH_NIGHT_URL = 'https://unpkg.com/three-globe/example/img/earth-night.jpg';
-const EARTH_CLOUDS_URL = 'https://unpkg.com/three-globe/example/img/earth-clouds.png';
-const EARTH_WATER_URL = 'https://unpkg.com/three-globe/example/img/earth-water.png';
-
 interface CinematicScrollCanvasProps {
   scrollProgress: number; // 0.0 to 1.0
 }
@@ -275,59 +268,30 @@ export const CinematicScrollCanvas: React.FC<CinematicScrollCanvasProps> = ({ sc
     scene.add(sunLight);
     scene.add(new THREE.AmbientLight(0x10131a, 0.48));
 
-    // 10. Load Real NASA Blue Marble Textures from CDN
-    const texLoader = new THREE.TextureLoader();
-    texLoader.crossOrigin = 'anonymous';
-
-    const loadTex = (url: string, anisotropy = 4) => {
-      return new Promise<THREE.Texture>((resolve, reject) => {
-        texLoader.load(
-          url,
-          (tex) => {
-            tex.anisotropy = anisotropy;
-            tex.generateMipmaps = true;
-            tex.minFilter = THREE.LinearMipmapLinearFilter;
-            tex.magFilter = THREE.LinearFilter;
-            resolve(tex);
-          },
-          undefined,
-          reject
-        );
-      });
-    };
-
+    // 10. Use bundled procedural textures so the landing page has no CDN dependency.
     let loadedTextures: THREE.Texture[] = [];
-
-    Promise.all([
-      loadTex(EARTH_DAY_URL, 4),
-      loadTex(EARTH_NIGHT_URL, 2),
-      loadTex(EARTH_WATER_URL, 2),
-      loadTex(EARTH_CLOUDS_URL, 2),
-    ]).then(([dayTex, nightTex, waterTex, cloudsTex]) => {
-      loadedTextures = [dayTex, nightTex, waterTex, cloudsTex];
-
-      // Apply to shader uniforms
-      earthShaderMat.uniforms.dayTexture.value = dayTex;
-      earthShaderMat.uniforms.nightTexture.value = nightTex;
-      earthShaderMat.uniforms.specularMap.value = waterTex;
-      earthShaderMat.uniforms.cloudsTexture.value = cloudsTex;
-      earthShaderMat.needsUpdate = true;
-    }).catch((err) => {
-      // CDN load failed — fall back to procedural textures inline
-      console.warn('CDN texture load failed, using procedural fallback:', err);
-      import('./realisticEarthTextures').then(({ createRealisticEarthTexture, createNightLightsTexture, createOceanSpecularMap, createRealisticCloudsTexture }) => {
-        const dayFallback = createRealisticEarthTexture(2048, 1024);
-        const nightFallback = createNightLightsTexture(2048, 1024);
-        const specFallback = createOceanSpecularMap(1024, 512);
-        const cloudsFallback = createRealisticCloudsTexture(1024, 512);
-        earthShaderMat.uniforms.dayTexture.value = dayFallback;
-        earthShaderMat.uniforms.nightTexture.value = nightFallback;
-        earthShaderMat.uniforms.specularMap.value = specFallback;
-        earthShaderMat.uniforms.cloudsTexture.value = cloudsFallback;
+    let isDisposed = false;
+    void import('./realisticEarthTextures')
+      .then(({ createRealisticEarthTexture, createNightLightsTexture, createOceanSpecularMap, createRealisticCloudsTexture }) => {
+        const textures = [
+          createRealisticEarthTexture(1024, 512),
+          createNightLightsTexture(1024, 512),
+          createOceanSpecularMap(512, 256),
+          createRealisticCloudsTexture(512, 256),
+        ];
+        if (isDisposed) {
+          textures.forEach((texture) => texture.dispose());
+          return;
+        }
+        const [dayTexture, nightTexture, specularMap, cloudsTexture] = textures;
+        earthShaderMat.uniforms.dayTexture.value = dayTexture;
+        earthShaderMat.uniforms.nightTexture.value = nightTexture;
+        earthShaderMat.uniforms.specularMap.value = specularMap;
+        earthShaderMat.uniforms.cloudsTexture.value = cloudsTexture;
         earthShaderMat.needsUpdate = true;
-        loadedTextures = [dayFallback, nightFallback, specFallback, cloudsFallback];
-      });
-    });
+        loadedTextures = textures;
+      })
+      .catch((error) => console.error('Unable to create landing-page Earth textures:', error));
 
     // 11. Animation Loop
     let animationFrameId: number;
@@ -387,6 +351,7 @@ export const CinematicScrollCanvas: React.FC<CinematicScrollCanvasProps> = ({ sc
     window.addEventListener('resize', handleResize);
 
     return () => {
+      isDisposed = true;
       cancelAnimationFrame(animationFrameId);
       window.removeEventListener('resize', handleResize);
       renderer.dispose();

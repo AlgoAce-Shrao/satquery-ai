@@ -49,6 +49,7 @@ SatQuery AI consists of 5 deployable services:
   ```bash
   psql -h <db-host> -U satquery -d satquery_db -f database/migrations/001_initial_schema.sql
   psql -h <db-host> -U satquery -d satquery_db -f database/migrations/002_seed_regions.sql
+  psql -h <db-host> -U satquery -d satquery_db -f database/migrations/003_seed_observations.sql
   ```
 
 ---
@@ -56,11 +57,11 @@ SatQuery AI consists of 5 deployable services:
 ### Service 2: Python NLP Service
 
 - **Recommended Platform**: Google Cloud Run / Docker Container
-- **Port**: `8001`
+- **Port**: supplied by the platform through `PORT` (defaults to `8001` locally)
 - **Build Context**: `./services/nlp-service`
 - **Dockerfile**: `docker/Dockerfile.nlp`
 - **Build Command**: `docker build -t satquery-nlp -f docker/Dockerfile.nlp services/nlp-service`
-- **Start Command**: `uvicorn app.main:app --host 0.0.0.0 --port 8001`
+- **Start Command**: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
 - **Environment Variables**:
   - `PORT=8001`
   - `LLM_PROVIDER=rule_based` (or `gemini` / `openai`)
@@ -72,11 +73,11 @@ SatQuery AI consists of 5 deployable services:
 ### Service 3: Python Data Service
 
 - **Recommended Platform**: Google Cloud Run / Docker Container
-- **Port**: `8002`
+- **Port**: supplied by the platform through `PORT` (defaults to `8002` locally)
 - **Build Context**: `./services/data-service`
 - **Dockerfile**: `docker/Dockerfile.data-service`
 - **Build Command**: `docker build -t satquery-data -f docker/Dockerfile.data-service services/data-service`
-- **Start Command**: `uvicorn app.main:app --host 0.0.0.0 --port 8002`
+- **Start Command**: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
 - **Environment Variables**:
   - `PORT=8002`
   - `DATABASE_URL=postgresql://satquery:<password>@<db-host>:5432/satquery_db`
@@ -87,11 +88,11 @@ SatQuery AI consists of 5 deployable services:
 ### Service 4: Python EO Analysis Service
 
 - **Recommended Platform**: Google Cloud Run / Docker Container
-- **Port**: `8003`
+- **Port**: supplied by the platform through `PORT` (defaults to `8003` locally)
 - **Build Context**: `./services/eo-analysis-service`
 - **Dockerfile**: `docker/Dockerfile.eo-analysis`
 - **Build Command**: `docker build -t satquery-eo -f docker/Dockerfile.eo-analysis services/eo-analysis-service`
-- **Start Command**: `uvicorn app.main:app --host 0.0.0.0 --port 8003`
+- **Start Command**: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
 - **Environment Variables**:
   - `PORT=8003`
 - **Health Check**: `GET http://<host>:8003/health`
@@ -101,16 +102,16 @@ SatQuery AI consists of 5 deployable services:
 ### Service 5: Spring Boot Gateway
 
 - **Recommended Platform**: Google Cloud Run / AWS App Runner / Fly.io
-- **Port**: `8080`
-- **Build Context**: `./backend/spring-boot`
+- **Port**: supplied by the platform through `PORT` (defaults to `8080` locally)
+- **Build Context**: repository root (`.`)
 - **Dockerfile**: `docker/Dockerfile.spring-boot`
 - **Build Command**: `mvn clean package -DskipTests`
 - **Start Command**: `java -jar target/satquery-backend-1.0.0-SNAPSHOT.jar`
 - **Environment Variables**:
-  - `SERVER_PORT=8080`
-  - `NLP_SERVICE_URL=http://<nlp-service-host>:8001`
-  - `DATA_SERVICE_URL=http://<data-service-host>:8002`
-  - `EO_SERVICE_URL=http://<eo-service-host>:8003`
+  - `NLP_SERVICE_URL=https://<nlp-service-host>`
+  - `DATA_SERVICE_URL=https://<data-service-host>`
+  - `EO_SERVICE_URL=https://<eo-service-host>`
+  - `CORS_ALLOWED_ORIGINS=https://<your-vercel-app>.vercel.app`
 - **Health Check**: `GET http://<host>:8080/api/v1/health`
 
 ---
@@ -126,6 +127,8 @@ SatQuery AI consists of 5 deployable services:
   - `VITE_CESIUM_ION_ACCESS_TOKEN=<optional-token>`
   - `VITE_GEMINI_API_KEY=<optional-token>`
 
+> **Vercel:** deploy only the static frontend there. Set `VITE_SPRING_BOOT_API_URL` to the public Spring Boot Gateway URL in the Vercel Production environment, then redeploy; Vite embeds `VITE_*` values during the build. Set the same Vercel origin in the gateway's `CORS_ALLOWED_ORIGINS`. The gateway, Python services, and PostGIS need a container-capable host.
+
 ---
 
 ## 4. Exact Deployment Order
@@ -134,7 +137,7 @@ Execute deployments strictly in this order to satisfy service dependencies:
 
 1. **Step 1: Database Provisioning**
    - Provision PostgreSQL 16 + PostGIS 3.4.
-   - Run SQL migrations `001_initial_schema.sql` and `002_seed_regions.sql`.
+   - Run SQL migrations `001_initial_schema.sql`, `002_seed_regions.sql`, and `003_seed_observations.sql`.
 2. **Step 2: Microservices Deployment**
    - Deploy `data-service` (connected to Database).
    - Deploy `nlp-service`.

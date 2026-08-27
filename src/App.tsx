@@ -75,11 +75,6 @@ export default function App() {
 
   const tourTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Execute default investigation on mount
-  useEffect(() => {
-    runQuery(INITIAL_QUERY);
-  }, []);
-
   const runQuery = async (queryText: string) => {
     if (tourTimerRef.current) {
       clearInterval(tourTimerRef.current);
@@ -92,12 +87,49 @@ export default function App() {
       return;
     }
 
-    await QueryApiClient.executeQuery(queryText, (update) => {
-      setExecutionState((prev) => ({
-        ...prev,
-        ...update,
-      }));
+    const initialState = queryEngine.createInitialState(queryText);
+    setExecutionState({
+      ...initialState,
+      status: 'PROCESSING',
+      systemMessage: 'Submitting query to the analysis service...',
     });
+
+    try {
+      const response = await QueryApiClient.executeQuery(queryText, (update) => {
+        setExecutionState((prev) => ({
+          ...prev,
+          ...update,
+        }));
+      });
+      const results = response.results;
+      const observationId = results[0]
+        ? `${results[0].siteCode.replace('SITE_', '')}-${results[0].observationPeriod.afterDate}`
+        : `SAT-${new Date().toISOString().slice(0, 10)}`;
+
+      setExecutionState({
+        ...initialState,
+        queryId: response.queryId || initialState.queryId,
+        rawQuery: response.rawQuery || queryText,
+        structuredQuery: response.structuredQuery || initialState.structuredQuery,
+        status: 'COMPLETED',
+        currentStepIndex: initialState.steps.length - 1,
+        results,
+        activeResultIndex: 0,
+        isTourActive: Boolean(response.visualization?.autoNavigate && results.length > 1),
+        observationId,
+        filterCount: results.length,
+        systemMessage: results.length > 0
+          ? `Identified ${results.length} matching observations. Flying to ${results[0].regionName}.`
+          : 'The analysis service completed the query but found no matching observations.',
+      });
+      setIsHUDVisible(true);
+    } catch (err: any) {
+      setExecutionState({
+        ...initialState,
+        status: 'ERROR',
+        systemMessage: `Query failed: ${err.message || 'Unable to reach the analysis service.'}`,
+      });
+    }
   };
 
   /**
@@ -312,9 +344,7 @@ export default function App() {
 
   const handleLaunchMissionControl = (initialQuery?: string) => {
     setCurrentView('APP');
-    if (initialQuery && initialQuery.trim()) {
-      runQuery(initialQuery.trim());
-    }
+    runQuery(initialQuery?.trim() || INITIAL_QUERY);
   };
 
   const handleOpenUploadFromLanding = () => {

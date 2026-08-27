@@ -1,5 +1,6 @@
 server:
-  port: ${SERVER_PORT:8080}
+  # Managed container platforms inject PORT. SERVER_PORT remains available for local use.
+  port: ${PORT:${SERVER_PORT:8080}}
 
 spring:
   application:
@@ -8,12 +9,18 @@ spring:
     banner-mode: console
 
 services:
+  request-timeout-ms: ${DOWNSTREAM_REQUEST_TIMEOUT_MS:10000}
   nlp:
     url: ${NLP_SERVICE_URL:http://localhost:8001}
   data:
     url: ${DATA_SERVICE_URL:http://localhost:8002}
   eo:
     url: ${EO_SERVICE_URL:http://localhost:8003}
+
+app:
+  cors:
+    # Comma-separated browser origins. Configure the deployed frontend origin in production.
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000}
 
 management:
   endpoints:
