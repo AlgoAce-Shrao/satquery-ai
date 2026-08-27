@@ -8,6 +8,8 @@ import { queryInterpreter } from './queryInterpreter';
 import { satelliteDataProvider } from './satelliteDataProvider';
 
 export class QueryEngine {
+  private activeExecutionId = 0;
+
   createInitialState(rawQuery: string): QueryExecutionState {
     const structured = queryInterpreter.interpret(rawQuery);
     const observationId = `SAT-${new Date().toISOString().slice(0, 10)}`;
@@ -70,20 +72,27 @@ export class QueryEngine {
     rawQuery: string,
     onProgress: (stateUpdate: Partial<QueryExecutionState>) => void
   ): Promise<QueryExecutionState> {
+    const executionId = ++this.activeExecutionId;
     const state = this.createInitialState(rawQuery);
     state.status = 'PROCESSING';
     onProgress({ status: 'PROCESSING', steps: [...state.steps], rawQuery, structuredQuery: state.structuredQuery });
 
     for (let i = 0; i < state.steps.length; i++) {
+      if (this.activeExecutionId !== executionId) return state;
+
       state.currentStepIndex = i;
       state.steps[i].status = 'RUNNING';
       onProgress({ currentStepIndex: i, steps: [...state.steps] });
 
       await new Promise((r) => setTimeout(r, state.steps[i].durationMs || 300));
 
+      if (this.activeExecutionId !== executionId) return state;
+
       state.steps[i].status = 'COMPLETED';
       onProgress({ steps: [...state.steps] });
     }
+
+    if (this.activeExecutionId !== executionId) return state;
 
     const { results, matchedCount, totalCount } = queryInterpreter.execute(rawQuery);
 

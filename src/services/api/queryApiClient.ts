@@ -165,7 +165,9 @@ export class QueryApiClient {
 
   /**
    * Dispatches the natural language query to the backend orchestration service.
-   * Development retains the sample-data fallback so the UI can be explored without the service stack.
+   * Always falls back to the client-side sample-data engine — in dev because the
+   * gateway usually isn't running, in prod so a cold start, timeout, or CORS
+   * misconfiguration degrades gracefully instead of failing the query outright.
    */
   public static async executeQuery(
     rawQuery: string,
@@ -188,6 +190,12 @@ export class QueryApiClient {
         throw new Error(`Query API request failed with HTTP ${response.status}.`);
       }
 
+      const contentType = response.headers.get('content-type') || '';
+      if (!contentType.includes('application/json')) {
+        // Render cold starts can return an HTML "service starting" page with a 200 OK.
+        throw new Error('Query API returned a non-JSON response (the gateway may be waking from a cold start).');
+      }
+
       const data = (await response.json()) as GatewayQueryResponse;
       if (!data || !Array.isArray(data.results)) {
         throw new Error('Query API returned an invalid response payload.');
@@ -203,22 +211,19 @@ export class QueryApiClient {
       const error = requestController.signal.aborted
         ? new Error('The analysis service did not respond within 15 seconds.')
         : err;
-      if ((import.meta as any).env?.PROD) {
-        throw error;
-      }
       console.warn('Backend API unavailable, using in-memory engine fallback:', error);
     } finally {
       window.clearTimeout(timeoutId);
     }
 
-    // Fallback: Use client-side queryEngine execution with simulated stage transitions
+    // Client-side queryEngine execution with progressive stage transitions
     return new Promise((resolve) => {
       queryEngine.executeQuery(rawQuery, (update) => {
         if (onProgressUpdate) onProgressUpdate(update);
         if (update.status === 'COMPLETED') {
           resolve({
             queryId: update.queryId || 'Q_FALLBACK',
-            rawQuery,
+            rawQuery: update.rawQuery || rawQuery,
             structuredQuery: update.structuredQuery,
             results: update.results || [],
             visualization: {

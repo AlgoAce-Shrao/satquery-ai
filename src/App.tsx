@@ -74,8 +74,11 @@ export default function App() {
   });
 
   const tourTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const activeQueryTokenRef = useRef<number>(0);
 
   const runQuery = async (queryText: string) => {
+    const token = ++activeQueryTokenRef.current;
+
     if (tourTimerRef.current) {
       clearInterval(tourTimerRef.current);
       tourTimerRef.current = null;
@@ -91,16 +94,24 @@ export default function App() {
     setExecutionState({
       ...initialState,
       status: 'PROCESSING',
+      rawQuery: queryText,
       systemMessage: 'Submitting query to the analysis service...',
     });
+    setIsHUDVisible(true);
 
     try {
       const response = await QueryApiClient.executeQuery(queryText, (update) => {
-        setExecutionState((prev) => ({
-          ...prev,
-          ...update,
-        }));
+        if (activeQueryTokenRef.current === token) {
+          setExecutionState((prev) => ({
+            ...prev,
+            ...update,
+          }));
+        }
       });
+
+      // A newer query has since been submitted — discard this now-stale response.
+      if (activeQueryTokenRef.current !== token) return;
+
       const results = response.results;
       const observationId = results[0]
         ? `${results[0].siteCode.replace('SITE_', '')}-${results[0].observationPeriod.afterDate}`
@@ -124,6 +135,7 @@ export default function App() {
       });
       setIsHUDVisible(true);
     } catch (err: any) {
+      if (activeQueryTokenRef.current !== token) return;
       setExecutionState({
         ...initialState,
         status: 'ERROR',
@@ -343,8 +355,9 @@ export default function App() {
   }, [handleToggleTour, handleNextSite, handlePreviousSite, isQueryModalOpen, isEvidenceModalOpen]);
 
   const handleLaunchMissionControl = (initialQuery?: string) => {
+    const targetQuery = initialQuery && initialQuery.trim() ? initialQuery.trim() : INITIAL_QUERY;
     setCurrentView('APP');
-    runQuery(initialQuery?.trim() || INITIAL_QUERY);
+    runQuery(targetQuery);
   };
 
   const handleOpenUploadFromLanding = () => {

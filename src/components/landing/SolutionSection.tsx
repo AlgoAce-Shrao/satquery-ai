@@ -4,7 +4,7 @@
  */
 
 import React, { useState } from 'react';
-import { Search, Sparkles, Send, MapPin, Calendar, Layers, CheckCircle2 } from 'lucide-react';
+import { Search, Sparkles, Send, ArrowRight, MapPin, Calendar, Layers, CheckCircle2 } from 'lucide-react';
 
 interface SolutionSectionProps {
   onLaunchWithQuery?: (query: string) => void;
@@ -83,8 +83,8 @@ export const SolutionSection: React.FC<SolutionSectionProps> = ({
               type="submit"
               className="px-5 py-2.5 bg-[#171b12] hover:bg-[#C88A45] border border-[#C88A45]/50 text-[#E8E4D8] hover:text-black font-mono-code text-xs font-semibold uppercase tracking-wider rounded-xs transition-all flex items-center gap-2 cursor-pointer shrink-0"
             >
-              <span>Ask Earth</span>
-              <Send className="w-3.5 h-3.5" />
+              <span>INVESTIGATE</span>
+              <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </form>
 
