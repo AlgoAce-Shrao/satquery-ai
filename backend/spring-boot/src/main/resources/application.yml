@@ -1,0 +1,22 @@
+server:
+  port: ${SERVER_PORT:8080}
+
+spring:
+  application:
+    name: satquery-backend
+  main:
+    banner-mode: console
+
+services:
+  nlp:
+    url: ${NLP_SERVICE_URL:http://localhost:8001}
+  data:
+    url: ${DATA_SERVICE_URL:http://localhost:8002}
+  eo:
+    url: ${EO_SERVICE_URL:http://localhost:8003}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics

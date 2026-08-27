@@ -1,0 +1,6 @@
+{
+  "name": "SatQuery AI",
+  "description": "AI-powered Earth Observation analyst enabling natural-language geospatial intelligence and autonomous 3D globe navigation.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

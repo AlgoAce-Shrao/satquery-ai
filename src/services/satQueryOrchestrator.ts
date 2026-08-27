@@ -1,0 +1,212 @@
+/**
+ * @license
+ * SPDX-License-Identifier: Apache-2.0
+ * 
+ * SatQuery Agentic Orchestrator
+ * Coordinates the full remote-sensing intelligence pipeline:
+ * Input Validation → Intent Classification → Specialist Tool Selection →
+ * Provider Execution → Spatial Evidence Extraction → AnalysisResult Compilation.
+ */
+
+import {
+  AnalysisInput,
+  WorkflowExecutionPlan,
+  SpecialistToolDefinition,
+} from '../types/upload';
+import { AnalysisResult, ExecutionPipelineStage } from '../types/geospatial';
+import { ToolRegistry } from './tools/toolRegistry';
+import { AnalysisProvider } from './providers/analysisProvider';
+import { MockAnalysisProvider } from './providers/mockAnalysisProvider';
+import { ColabMLAnalysisProvider } from './providers/colabMLAnalysisProvider';
+
+export class SatQueryOrchestrator {
+  private static instance: SatQueryOrchestrator;
+  private currentProvider: AnalysisProvider;
+  private colabProvider: ColabMLAnalysisProvider;
+  private mockProvider: MockAnalysisProvider;
+
+  private constructor() {
+    this.mockProvider = new MockAnalysisProvider();
+    this.colabProvider = new ColabMLAnalysisProvider();
+    this.currentProvider = this.mockProvider;
+  }
+
+  public static getInstance(): SatQueryOrchestrator {
+    if (!SatQueryOrchestrator.instance) {
+      SatQueryOrchestrator.instance = new SatQueryOrchestrator();
+    }
+    return SatQueryOrchestrator.instance;
+  }
+
+  public getActiveProvider(): AnalysisProvider {
+    return this.currentProvider;
+  }
+
+  public setProvider(type: 'MOCK' | 'COLAB', customUrl?: string) {
+    if (type === 'COLAB') {
+      if (customUrl) this.colabProvider.setEndpointUrl(customUrl);
+      this.currentProvider = this.colabProvider;
+    } else {
+      this.currentProvider = this.mockProvider;
+    }
+  }
+
+  /**
+   * Plans the agentic workflow by inspecting inputs, query intent, and tool readiness.
+   */
+  public planWorkflow(input: AnalysisInput, query: string): WorkflowExecutionPlan {
+    const classifiedIntent = this.classifyIntent(input, query);
+    const selectedTools = ToolRegistry.selectToolsForTask(classifiedIntent, input.mode);
+    const recommendedWorkflow = this.getWorkflowName(classifiedIntent, input.mode);
+
+    const stages: ExecutionPipelineStage[] = [
+      {
+        id: 'stg_init',
+        stage: 'QUERY_RECEIVED',
+        title: 'Query & Input Ingestion',
+        description: `Ingested ${input.mode} observation payload.`,
+      },
+      {
+        id: 'stg_val',
+        stage: 'INPUT_VALIDATED',
+        title: 'Input Compatibility Verification',
+        description: input.validationReport.summary,
+      },
+      {
+        id: 'stg_route',
+        stage: 'TASK_IDENTIFIED',
+        title: 'Agentic Task Routing',
+        description: `Routed to ${recommendedWorkflow} pipeline.`,
+      },
+      {
+        id: 'stg_dispatch',
+        stage: 'SPECIALIST_TOOL_SELECTED',
+        title: 'Specialist Model Execution',
+        description: `Executing [${selectedTools.map((t) => t.name).join(', ')}]`,
+      },
+      {
+        id: 'stg_analysis',
+        stage: 'REMOTE_SENSING_ANALYSIS',
+        title: 'Feature & Index Computation',
+        description: 'Analyzing spectral reflectance, temporal deltas & textural signatures.',
+      },
+      {
+        id: 'stg_spatial',
+        stage: 'SPATIAL_EVIDENCE_EXTRACTED',
+        title: 'Spatial Footprint Extraction',
+        description: 'Localizing polygon coordinates and calculating affected hectare metrics.',
+      },
+      {
+        id: 'stg_synth',
+        stage: 'INSIGHT_GENERATED',
+        title: 'Intelligence Synthesis',
+        description: 'Compiling structured observations, severity scores and evidence cards.',
+      },
+    ];
+
+    return {
+      planId: `PLAN_${Date.now()}`,
+      classifiedIntent,
+      recommendedWorkflow,
+      selectedTools,
+      stages,
+      confidenceScore: 0.94,
+      reasoningNotes: [
+        `Input mode [${input.mode}] matched with [${selectedTools.length}] specialist tools.`,
+        `Intent [${classifiedIntent}] prioritized based on linguistic indicators in prompt.`,
+      ],
+    };
+  }
+
+  /**
+   * Executes the full orchestrated intelligence workflow for an uploaded input.
+   */
+  public async executeAnalysis(
+    input: AnalysisInput,
+    query: string,
+    onProgressStage?: (stage: ExecutionPipelineStage) => void
+  ): Promise<AnalysisResult> {
+    // 1. Check if provider is available; fallback to mock if Colab is unreachable
+    let activeProvider = this.currentProvider;
+    if (activeProvider.type === 'COLAB_ML_SERVER') {
+      const isLive = await activeProvider.isAvailable();
+      if (!isLive) {
+        console.warn('Colab ML server unreachable. Auto-falling back to SatQuery Rule Engine.');
+        activeProvider = this.mockProvider;
+      }
+    }
+
+    // 2. Execute through provider
+    const result = await activeProvider.execute(input, query, onProgressStage);
+    return result;
+  }
+
+  private classifyIntent(input: AnalysisInput, query: string): string {
+    const q = query.toLowerCase();
+    const mode = input.mode;
+
+    if (mode === 'OPTICAL_SAR' || (q.includes('optical') && q.includes('sar'))) {
+      return 'MULTIMODAL_ANALYSIS';
+    }
+
+    if (
+      q.includes('highlight') ||
+      q.includes('grounding') ||
+      q.includes('where is') ||
+      q.includes('water body') ||
+      q.includes('outline')
+    ) {
+      return 'REGION_GROUNDING';
+    }
+
+    if (
+      mode === 'BI_TEMPORAL' ||
+      q.includes('what changed') ||
+      q.includes('change between') ||
+      q.includes('expansion') ||
+      q.includes('loss') ||
+      q.includes('decrease') ||
+      q.includes('increase')
+    ) {
+      if (q.includes('vegetation') || q.includes('forest') || q.includes('canopy')) {
+        return 'VEGETATION_CHANGE';
+      }
+      if (q.includes('urban') || q.includes('built-up') || q.includes('building')) {
+        return 'URBAN_CHANGE';
+      }
+      if (q.includes('flood') || q.includes('water') || q.includes('inundation')) {
+        return 'FLOOD_ANALYSIS';
+      }
+      return 'CHANGE_DETECTION';
+    }
+
+    if (q.includes('describe') || q.includes('land cover') || q.includes('land-cover') || q.includes('classify')) {
+      return 'LAND_COVER_ANALYSIS';
+    }
+
+    return 'VISUAL_QUESTION_ANSWERING';
+  }
+
+  private getWorkflowName(intent: string, mode: string): string {
+    switch (intent) {
+      case 'MULTIMODAL_ANALYSIS':
+        return 'Optical + SAR Cross-Modal Fusion';
+      case 'REGION_GROUNDING':
+        return 'Text-Guided Spatial Grounding';
+      case 'VEGETATION_CHANGE':
+        return 'Bi-Temporal Canopy Loss & Vegetation Delta';
+      case 'URBAN_CHANGE':
+        return 'Bi-Temporal Urban Expansion Delineation';
+      case 'FLOOD_ANALYSIS':
+        return 'Hydro-Inundation & Flood Extent Mapping';
+      case 'CHANGE_DETECTION':
+        return 'Bi-Temporal Radiometric Difference Analysis';
+      case 'LAND_COVER_ANALYSIS':
+        return 'Multi-Spectral Land-Cover Partitioning';
+      default:
+        return 'Remote-Sensing Scene Question Answering';
+    }
+  }
+}
+
+export const satQueryOrchestrator = SatQueryOrchestrator.getInstance();
