@@ -40,16 +40,22 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
         </div>
 
         <p className="text-sm sm:text-base text-[#96978D] font-sans max-w-lg leading-relaxed font-light">
-          A natural-language intelligence layer for multi-constellation satellite observation, bi-temporal change detection, and verified planetary evidence.
+          Turn natural-language questions into remote-sensing analysis and evidence.
         </p>
 
-        <div className="pt-2">
+        <div className="pt-2 flex flex-wrap items-center gap-4">
           <button
             onClick={onLaunchApp}
             className="px-6 py-3.5 bg-[#121410] hover:bg-[#1a1e16] border border-[#C88A45]/60 hover:border-[#C88A45] text-[#E8E4D8] font-mono-code text-xs font-semibold uppercase tracking-wider transition-all flex items-center gap-3 cursor-pointer rounded-sm shadow-sm"
           >
-            <span>Start Exploring</span>
+            <span>Explore SatQuery</span>
             <ArrowRight className="w-4 h-4 text-[#C88A45]" />
+          </button>
+          <button
+            onClick={onScrollDown}
+            className="font-mono-code text-xs font-medium uppercase tracking-wider text-[#96978D] hover:text-[#E8E4D8] transition-colors cursor-pointer"
+          >
+            See how it works
           </button>
         </div>
       </div>

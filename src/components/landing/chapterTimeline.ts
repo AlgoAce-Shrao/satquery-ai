@@ -22,13 +22,13 @@ export interface ChapterInfo {
 }
 
 export const CHAPTERS: ChapterInfo[] = [
-  { id: 'hero', name: 'ORBIT / HERO', startProgress: 0.0, endProgress: 0.12 },
-  { id: 'problem', name: 'THE PROBLEM', startProgress: 0.12, endProgress: 0.26 },
-  { id: 'query', name: 'ASK THE EARTH', startProgress: 0.26, endProgress: 0.40 },
-  { id: 'agents', name: 'MULTI-AGENT INTELLIGENCE', startProgress: 0.40, endProgress: 0.56 },
-  { id: 'response', name: 'EARTH RESPONDS', startProgress: 0.56, endProgress: 0.72 },
+  { id: 'hero', name: 'SPACE / HERO', startProgress: 0.0, endProgress: 0.12 },
+  { id: 'problem', name: 'WHY THIS MATTERS', startProgress: 0.12, endProgress: 0.26 },
+  { id: 'query', name: 'ASK IN NATURAL LANGUAGE', startProgress: 0.26, endProgress: 0.40 },
+  { id: 'analysis', name: 'SPECIALIZED ANALYSIS', startProgress: 0.40, endProgress: 0.56 },
+  { id: 'evidence', name: 'VISUAL EVIDENCE', startProgress: 0.56, endProgress: 0.72 },
   { id: 'apps', name: 'APPLICATIONS', startProgress: 0.72, endProgress: 0.86 },
-  { id: 'future', name: 'FUTURE / VOICE', startProgress: 0.86, endProgress: 0.94 },
+  { id: 'product', name: 'PRODUCT PREVIEW', startProgress: 0.86, endProgress: 0.94 },
   { id: 'cta', name: 'ORBITAL RETURN', startProgress: 0.94, endProgress: 1.0 },
 ];
 

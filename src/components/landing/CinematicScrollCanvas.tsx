@@ -24,6 +24,14 @@ export const CinematicScrollCanvas: React.FC<CinematicScrollCanvasProps> = ({ sc
 
   const targetProgress = useRef<number>(0);
   const currentProgress = useRef<number>(0);
+  const prefersReducedMotion = useRef<boolean>(false);
+
+  useEffect(() => {
+    prefersReducedMotion.current =
+      typeof window !== 'undefined' && window.matchMedia
+        ? window.matchMedia('(prefers-reduced-motion: reduce)').matches
+        : false;
+  }, []);
 
   useEffect(() => {
     targetProgress.current = Math.max(0, Math.min(1, scrollProgress));
@@ -301,7 +309,14 @@ export const CinematicScrollCanvas: React.FC<CinematicScrollCanvasProps> = ({ sc
       animationFrameId = requestAnimationFrame(animate);
       const t = clock.getElapsedTime();
 
-      currentProgress.current += (targetProgress.current - currentProgress.current) * 0.08;
+      // Reduced motion: hold a single fixed framing instead of travelling the camera
+      // along scroll. World motion (rotation, clouds, satellite orbit) keeps running —
+      // only the scroll-driven camera "story" is disabled.
+      if (prefersReducedMotion.current) {
+        currentProgress.current = 0;
+      } else {
+        currentProgress.current += (targetProgress.current - currentProgress.current) * 0.08;
+      }
       const p = currentProgress.current;
       const waypoint = sampleWaypointTimeline(p);
 
@@ -318,14 +333,18 @@ export const CinematicScrollCanvas: React.FC<CinematicScrollCanvasProps> = ({ sc
         const cam = cameraRef.current;
         const sat = satelliteRef.current;
 
-        globe.rotation.y = waypoint.globeRotOffset + t * 0.007;
+        // A slow ambient spin stays on even with reduced motion (it reads as a static
+        // living planet, not a scroll-triggered camera move) but runs at a gentler rate.
+        const ambientSpinRate = prefersReducedMotion.current ? 0.0015 : 0.007;
+        globe.rotation.y = waypoint.globeRotOffset + t * ambientSpinRate;
         globe.position.copy(waypoint.globePos);
 
         cam.position.copy(waypoint.camPos);
         cam.lookAt(waypoint.camLookAt);
 
-        const satFloatX = Math.cos(t * 0.35) * 0.7;
-        const satFloatY = Math.sin(t * 0.30) * 0.5;
+        const satFloatScale = prefersReducedMotion.current ? 0.3 : 1.0;
+        const satFloatX = Math.cos(t * 0.35) * 0.7 * satFloatScale;
+        const satFloatY = Math.sin(t * 0.30) * 0.5 * satFloatScale;
         sat.rootGroup.position.set(
           waypoint.satPos.x + satFloatX,
           waypoint.satPos.y + satFloatY,

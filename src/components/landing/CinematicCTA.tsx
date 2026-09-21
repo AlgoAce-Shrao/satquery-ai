@@ -45,7 +45,7 @@ export const CinematicCTA: React.FC<CinematicCTAProps> = ({ onLaunchApp }) => {
             onClick={onLaunchApp}
             className="w-full sm:w-auto px-9 py-4 bg-[#121410] hover:bg-[#C88A45] border border-[#C88A45]/70 text-[#E8E4D8] hover:text-black font-mono-code text-xs sm:text-sm font-semibold uppercase tracking-wider transition-all flex items-center justify-center gap-3 cursor-pointer rounded-xs shadow-sm"
           >
-            <span>Launch SatQuery AI</span>
+            <span>Explore SatQuery</span>
             <ArrowRight className="w-4 h-4" />
           </button>
         </div>

@@ -13,7 +13,7 @@ import { SolutionSection } from './SolutionSection';
 import { AgentWorkflowSection } from './AgentWorkflowSection';
 import { EarthResponseSection } from './EarthResponseSection';
 import { ApplicationsSection } from './ApplicationsSection';
-import { FutureVisionSection } from './FutureVisionSection';
+import { ProductPreviewSection } from './ProductPreviewSection';
 import { CinematicCTA } from './CinematicCTA';
 
 interface LandingPageProps {
@@ -32,6 +32,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   const [scrollProgress, setScrollProgress] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
   const problemRef = useRef<HTMLDivElement>(null);
+  const applicationsRef = useRef<HTMLDivElement>(null);
 
   const handleLaunch = () => {
     if (onLaunchMissionControl) {
@@ -57,12 +58,25 @@ export const LandingPage: React.FC<LandingPageProps> = ({
     }
   };
 
+  const handleScrollToApplications = () => {
+    if (applicationsRef.current) {
+      applicationsRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   useEffect(() => {
-    // 1. Initialize Lenis Smooth Scroller
+    const prefersReducedMotion =
+      typeof window !== 'undefined' && window.matchMedia
+        ? window.matchMedia('(prefers-reduced-motion: reduce)').matches
+        : false;
+
+    // 1. Initialize Lenis Smooth Scroller (skipped under reduced motion — native
+    // browser scrolling is used instead, via the fallback listener below).
     let lenis: Lenis | null = null;
     let rafId: number;
 
     try {
+      if (prefersReducedMotion) throw new Error('reduced-motion: skip Lenis');
       lenis = new Lenis({
         duration: 1.2,
         easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
@@ -109,10 +123,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   return (
     <div
       ref={containerRef}
-      className="relative min-h-screen bg-[#080907] text-[#E8E4D8] selection:bg-[#C88A45] selection:text-black overflow-x-hidden"
+      className="landing-scope relative min-h-screen bg-[#080907] text-[#E8E4D8] selection:bg-[#C88A45] selection:text-black overflow-x-hidden"
     >
       {/* 1. Top Minimal Sticky Header */}
-      <MinimalHeader onLaunchApp={handleLaunch} onAboutClick={handleScrollDown} />
+      <MinimalHeader
+        onLaunchApp={handleLaunch}
+        onCapabilitiesClick={handleScrollDown}
+        onApplicationsClick={handleScrollToApplications}
+      />
 
       {/* 2. Persistent 3D WebGL Earth, Space, and Satellite Spine */}
       <CinematicScrollCanvas scrollProgress={scrollProgress} />
@@ -138,10 +156,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       <EarthResponseSection />
 
       {/* 8. Chapter 5: One Intelligence, Many Earth Problems (6 Application Domains) */}
-      <ApplicationsSection onSelectApplication={handleQuery} />
+      <div ref={applicationsRef}>
+        <ApplicationsSection onSelectApplication={handleQuery} />
+      </div>
 
-      {/* 9. Chapter 6: The Future of Conversational Earth Exploration */}
-      <FutureVisionSection />
+      {/* 9. Chapter 6: Product Preview (placeholder — real footage lands here later) */}
+      <ProductPreviewSection onLaunchApp={handleLaunch} />
 
       {/* 10. Chapter 7: Final Orbital Sunrise Call to Action */}
       <CinematicCTA onLaunchApp={handleLaunch} />

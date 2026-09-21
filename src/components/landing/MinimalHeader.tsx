@@ -8,12 +8,14 @@ import { ArrowUpRight, Compass } from 'lucide-react';
 
 interface MinimalHeaderProps {
   onLaunchApp: () => void;
-  onAboutClick?: () => void;
+  onCapabilitiesClick?: () => void;
+  onApplicationsClick?: () => void;
 }
 
 export const MinimalHeader: React.FC<MinimalHeaderProps> = ({
   onLaunchApp,
-  onAboutClick,
+  onCapabilitiesClick,
+  onApplicationsClick,
 }) => {
   return (
     <header className="fixed top-0 left-0 right-0 z-50 px-6 sm:px-12 py-4.5 bg-gradient-to-b from-[#080907]/90 via-[#080907]/60 to-transparent backdrop-blur-[4px] transition-all">
@@ -37,10 +39,17 @@ export const MinimalHeader: React.FC<MinimalHeaderProps> = ({
         {/* Right: Actions */}
         <div className="flex items-center gap-6">
           <button
-            onClick={onAboutClick}
-            className="text-xs font-mono-code uppercase tracking-wider text-[#96978D] hover:text-[#E8E4D8] transition-colors cursor-pointer"
+            onClick={onCapabilitiesClick}
+            className="hidden sm:inline text-xs font-mono-code uppercase tracking-wider text-[#96978D] hover:text-[#E8E4D8] transition-colors cursor-pointer"
           >
-            Mission Context
+            Capabilities
+          </button>
+
+          <button
+            onClick={onApplicationsClick}
+            className="hidden sm:inline text-xs font-mono-code uppercase tracking-wider text-[#96978D] hover:text-[#E8E4D8] transition-colors cursor-pointer"
+          >
+            Applications
           </button>
 
           <button
