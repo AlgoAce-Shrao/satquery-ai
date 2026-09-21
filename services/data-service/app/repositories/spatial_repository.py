@@ -54,32 +54,35 @@ class SpatialRepository:
 
     async def _apply_migrations(self) -> None:
         """Self-installs the PostGIS schema on a fresh database (e.g. a newly provisioned
-        managed Postgres on Render). Schema migrations use CREATE ... IF NOT EXISTS so they
-        are safe to re-run on every boot; seed-data migrations only run once, guarded by a
-        row-count check, since they contain plain INSERTs with no ON CONFLICT clause."""
+        managed Postgres on Render). Every migration file is safe to re-run on every boot:
+        schema migrations use CREATE ... IF NOT EXISTS, and the seed-data migrations use
+        INSERT ... ON CONFLICT (id) DO NOTHING — so there is no need for our own
+        already-seeded guard, which only adds a way to skip seeding incorrectly.
+        Uses print() (not the logging module) so this is visible in Render's log stream
+        regardless of the app's logging configuration."""
         if not self._pool:
             return
         migration_files = sorted(glob.glob(os.path.join(self._migrations_dir, "*.sql")))
+        print(f"[migrations] migrations_dir={self._migrations_dir} files_found={migration_files}")
         if not migration_files:
-            logger.warning("No migration files found under %s; skipping self-migration.", self._migrations_dir)
+            print(f"[migrations] WARNING: no *.sql files found under {self._migrations_dir}; skipping self-migration.")
             return
 
         async with self._pool.acquire() as connection:
-            try:
-                existing_regions = await connection.fetchval("SELECT COUNT(*) FROM regions")
-            except asyncpg.exceptions.UndefinedTableError:
-                existing_regions = 0
-
             for path in migration_files:
                 filename = os.path.basename(path)
-                is_seed_migration = "seed" in filename.lower()
-                if is_seed_migration and existing_regions:
-                    logger.info("Skipping %s: seed data already present (%s regions).", filename, existing_regions)
-                    continue
                 with open(path, "r", encoding="utf-8") as handle:
                     sql = handle.read()
-                logger.info("Applying migration %s", filename)
-                await connection.execute(sql)
+                try:
+                    await connection.execute(sql)
+                    print(f"[migrations] Applied {filename} ({len(sql)} bytes)")
+                except Exception as exc:
+                    print(f"[migrations] FAILED applying {filename}: {exc!r}")
+                    raise
+
+            region_count = await connection.fetchval("SELECT COUNT(*) FROM regions")
+            obs_count = await connection.fetchval("SELECT COUNT(*) FROM observations")
+            print(f"[migrations] Post-migration row counts: regions={region_count} observations={obs_count}")
 
     async def close(self) -> None:
         if self._pool:
