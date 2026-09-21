@@ -115,10 +115,13 @@ export class RealAnalysisProvider implements AnalysisProvider {
   public async isAvailable(): Promise<boolean> {
     if (!this.gatewayUrl) return false;
     try {
+      // Render free-tier services can take 20-30s to wake from a cold start (see
+      // application.yml's read-timeout comment) — a short client-side timeout here would
+      // incorrectly mark a real, working gateway as unavailable and fall back to mock data.
       const response = await fetch(`${this.gatewayUrl}/api/v1/health`, {
         method: 'GET',
         headers: { Accept: 'application/json' },
-        signal: AbortSignal.timeout(5000),
+        signal: AbortSignal.timeout(30000),
       });
       return response.ok;
     } catch {

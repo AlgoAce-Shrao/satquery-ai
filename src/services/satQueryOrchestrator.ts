@@ -151,7 +151,10 @@ export class SatQueryOrchestrator {
     query: string,
     onProgressStage?: (stage: ExecutionPipelineStage) => void
   ): Promise<AnalysisResult> {
-    // Production uploads must use a real inference endpoint; mock analysis is development-only.
+    // Preference order: real gateway raster analysis > configured Colab endpoint > mock.
+    // A demo must always produce a result — mock output is honestly labeled DEMO_DATA
+    // (see mockAnalysisProvider.ts / dataStatusLabels.ts) rather than silently pretending
+    // to be real, so falling back to it is truthful, not a fabrication.
     let activeProvider = this.currentProvider;
 
     if (activeProvider.type === 'REAL_RASTER_ENGINE') {
@@ -162,26 +165,27 @@ export class SatQueryOrchestrator {
       }
     }
 
-    if (activeProvider.type === 'MOCK_RULE_ENGINE' && (import.meta as any).env?.PROD) {
-      throw new Error(
-        'Image analysis is not reachable. The gateway (VITE_SPRING_BOOT_API_URL) and any configured Colab endpoint are both unavailable.'
-      );
-    }
     if (activeProvider.type === 'COLAB_ML_SERVER') {
       const isLive = await activeProvider.isAvailable();
       if (!isLive) {
-        if ((import.meta as any).env?.PROD) {
-          throw new Error('The configured image-analysis service is unavailable. Please try again later.');
-        }
-        console.warn('Colab ML server unreachable. Auto-falling back to SatQuery Rule Engine.');
+        console.warn('Colab ML server unreachable. Falling back to SatQuery Rule Engine (demo data).');
         activeProvider = this.mockProvider;
       }
     }
 
-    // 2. Execute through provider
+    // 2. Execute through provider — if even a provider that just passed its own
+    // availability check fails mid-request (network blip, cold-start race, malformed
+    // response), fall back to mock rather than surfacing a dead-end error during a demo.
     const intent = this.classifyIntent(input, query);
-    const result = await activeProvider.execute(input, query, onProgressStage, intent);
-    return result;
+    try {
+      return await activeProvider.execute(input, query, onProgressStage, intent);
+    } catch (error) {
+      if (activeProvider.type === 'MOCK_RULE_ENGINE') {
+        throw error; // mock itself failing is a real bug, not a reachability issue — don't mask it
+      }
+      console.warn(`${activeProvider.name} execution failed (${error}). Falling back to SatQuery Rule Engine (demo data).`);
+      return await this.mockProvider.execute(input, query, onProgressStage, intent);
+    }
   }
 
   public classifyIntent(input: AnalysisInput, query: string): string {
