@@ -48,8 +48,8 @@ services:
 
   nlp-service:
     build:
-      context: .
-      dockerfile: docker/Dockerfile.nlp
+      context: ./services/nlp-service
+      dockerfile: ../../docker/Dockerfile.nlp
     container_name: satquery-nlp-service
     restart: unless-stopped
     ports:
@@ -68,8 +68,8 @@ services:
 
   data-service:
     build:
-      context: .
-      dockerfile: docker/Dockerfile.data-service
+      context: ./services/data-service
+      dockerfile: ../../docker/Dockerfile.data-service
     container_name: satquery-data-service
     restart: unless-stopped
     ports:
@@ -90,8 +90,8 @@ services:
 
   eo-analysis-service:
     build:
-      context: .
-      dockerfile: docker/Dockerfile.eo-analysis
+      context: ./services/eo-analysis-service
+      dockerfile: ../../docker/Dockerfile.eo-analysis
     container_name: satquery-eo-service
     restart: unless-stopped
     ports:

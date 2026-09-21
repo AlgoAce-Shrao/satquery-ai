@@ -1,11 +1,12 @@
-# Data Service Dockerfile — build context is the repo root (see docker-compose.yml / render.yaml)
+# Data Service Dockerfile
 FROM python:3.11-slim
 WORKDIR /app
-COPY services/data-service/requirements.txt .
+COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
-COPY services/data-service/ .
-# Bundled so the service can self-apply the PostGIS schema/seed data on first boot
-# (see app/repositories/spatial_repository.py::_apply_migrations).
-COPY database/migrations /app/migrations
+COPY . .
+# migrations/ is a same-directory copy of ../../database/migrations, kept in sync manually
+# (see MIGRATIONS_SYNC.md) — needed because this image's build context is this service's
+# own directory (matching how it's already configured on Render), which can't COPY from
+# outside itself.
 EXPOSE 8002
 CMD ["sh", "-c", "exec uvicorn app.main:app --host 0.0.0.0 --port \"${PORT:-8002}\""]
