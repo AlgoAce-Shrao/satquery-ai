@@ -18,6 +18,7 @@ import { QueryModal } from './components/query/QueryModal';
 import { EvidenceModal } from './components/results/EvidenceModal';
 import { TemporalComparisonViewer } from './components/results/TemporalComparisonViewer';
 import { MultimodalViewer } from './components/results/MultimodalViewer';
+import { ErrorBanner } from './components/query/ErrorBanner';
 import { UploadWizardModal } from './components/upload/UploadWizardModal';
 import { ActiveInputBanner } from './components/upload/ActiveInputBanner';
 import { InteractiveImageCanvas } from './components/upload/InteractiveImageCanvas';
@@ -484,6 +485,14 @@ export default function App() {
             />
           )}
 
+          {/* Error Banner: surfaces backend/CORS/analysis failures instead of failing silently */}
+          {executionState.status === 'ERROR' && (
+            <ErrorBanner
+              message={executionState.systemMessage}
+              onDismiss={() => setExecutionState((prev) => ({ ...prev, status: 'IDLE' }))}
+            />
+          )}
+
           {/* Spatial Floating Result Card (Active Insight) */}
           {executionState.status === 'COMPLETED' && activeResult && isHUDVisible && (
             <SpatialResultHUD
@@ -610,7 +619,7 @@ export default function App() {
         )}
 
         {/* Bottom Status Footer */}
-        <Footer systemMessage={executionState.systemMessage} />
+        <Footer systemMessage={executionState.systemMessage} status={executionState.status} />
       </div>
     </div>
   );

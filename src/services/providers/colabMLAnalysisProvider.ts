@@ -71,7 +71,8 @@ export class ColabMLAnalysisProvider implements AnalysisProvider {
   public async execute(
     input: AnalysisInput,
     query: string,
-    onProgressStage?: (stage: ExecutionPipelineStage) => void
+    onProgressStage?: (stage: ExecutionPipelineStage) => void,
+    intent?: string
   ): Promise<AnalysisResult> {
     const primary = input.images.primary;
     const secondary = input.images.secondary;
@@ -83,7 +84,7 @@ export class ColabMLAnalysisProvider implements AnalysisProvider {
 
     const payload: ColabAnalyzeRequest = {
       query,
-      task: input.validationReport.canExecuteAnalysis ? 'AUTO_DETECT' : 'GENERIC_VQA',
+      task: input.validationReport.canExecuteAnalysis ? (intent || 'AUTO_DETECT') : 'GENERIC_VQA',
       inputMode: input.mode,
       images: {
         primary: {

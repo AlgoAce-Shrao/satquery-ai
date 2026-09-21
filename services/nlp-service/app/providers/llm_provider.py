@@ -31,25 +31,30 @@ class RuleBasedProvider(LLMProvider):
         metric = SpectralIndex.NDVI
         direction = ChangeDirection.DECREASE
         thresh_val = -15.0
+        intent_keyword_matched = False
 
         if any(w in query_lower for w in ["water", "lake", "desiccation", "shrinkage", "reservoir", "river", "salinized"]):
             intent = IntentType.WATER_BODY_DYNAMICS
             metric = SpectralIndex.NDWI
             direction = ChangeDirection.DECREASE
             thresh_val = -25.0
+            intent_keyword_matched = True
         elif any(w in query_lower for w in ["urban", "built-up", "impervious", "concrete", "infrastructure", "expansion"]):
             intent = IntentType.URBAN_EXPANSION
             metric = SpectralIndex.NDBI
             direction = ChangeDirection.INCREASE
             thresh_val = 20.0
+            intent_keyword_matched = True
         elif any(w in query_lower for w in ["fire", "burn", "wildfire", "scar", "canopy loss"]):
             intent = IntentType.WILDFIRE_BURN_SEVERITY
             metric = SpectralIndex.NBR
             direction = ChangeDirection.DECREASE
             thresh_val = -35.0
+            intent_keyword_matched = True
         elif any(w in query_lower for w in ["vegetation", "canopy", "forest", "deforestation", "greenery", "biomass", "crop"]):
             intent = IntentType.VEGETATION_CHANGE
             metric = SpectralIndex.NDVI
+            intent_keyword_matched = True
             if "increase" in query_lower or "growth" in query_lower or "reforestation" in query_lower:
                 direction = ChangeDirection.INCREASE
                 thresh_val = 15.0
@@ -84,6 +89,7 @@ class RuleBasedProvider(LLMProvider):
                 spatial_type = "region"
                 spatial_name = name
                 break
+        region_matched = spatial_type == "region"
 
         # 4. Temporal Scope
         temporal_scope = TemporalScope(
@@ -111,7 +117,13 @@ class RuleBasedProvider(LLMProvider):
             ),
             satellite_preference=["Sentinel-2 MSI", "Landsat-8/9 OLI"],
             max_cloud_cover_percent=15.0,
-            confidence_score=0.96,
+            # Heuristic confidence: real (not hardcoded) — higher when the query actually
+            # matched an intent keyword and/or a named region, rather than falling through
+            # to the generic defaults. Still not a model probability.
+            confidence_score=round(
+                0.55 + (0.25 if intent_keyword_matched else 0.0) + (0.15 if region_matched else 0.0) + (0.05 if pct_match else 0.0),
+                2,
+            ),
             model_provider_used="RuleBasedProvider"
         )
 
@@ -120,5 +132,7 @@ class LLMProviderFactory:
     @staticmethod
     def get_provider() -> LLMProvider:
         provider_name = os.getenv("LLM_PROVIDER", "rule_based").lower()
-        # Allows runtime configuration for Gemini, OpenAI, or fast rule-based fallback
+        # Only rule_based is implemented today. LLM_PROVIDER=gemini/openai is accepted but
+        # currently has no effect — GEMINI_API_KEY/OPENAI_API_KEY are wired into the
+        # deployment config for future use, not consumed here yet.
         return RuleBasedProvider()

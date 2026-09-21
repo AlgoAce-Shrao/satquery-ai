@@ -31,7 +31,8 @@ export class MockAnalysisProvider implements AnalysisProvider {
   public async execute(
     input: AnalysisInput,
     query: string,
-    onProgressStage?: (stage: ExecutionPipelineStage) => void
+    onProgressStage?: (stage: ExecutionPipelineStage) => void,
+    intent?: string
   ): Promise<AnalysisResult> {
     const q = query.toLowerCase();
     const mode = input.mode;
@@ -252,7 +253,7 @@ export class MockAnalysisProvider implements AnalysisProvider {
         satellite: 'Sentinel-1 & Sentinel-2 Constellation',
         sensor: 'MSI Optical + C-SAR Radar',
         modality: 'MULTIMODAL',
-        dataStatus: 'PUBLIC_DATA',
+        dataStatus: 'DEMO_DATA',
         cloudCover: 12.4,
         observationPeriod: {
           beforeDate: input.temporalContext?.beforeDate || '2023-08-10',
@@ -326,7 +327,7 @@ export class MockAnalysisProvider implements AnalysisProvider {
         satellite: primary.geospatialInfo.satellitePlatform || 'Sentinel-2',
         sensor: primary.geospatialInfo.sensorType || 'MSI (10m)',
         modality: primary.modality,
-        dataStatus: 'PUBLIC_DATA',
+        dataStatus: 'DEMO_DATA',
         cloudCover: 4.1,
         observationPeriod: {
           beforeDate: primary.acquisitionDate || '2024-05-12',
@@ -420,7 +421,7 @@ export class MockAnalysisProvider implements AnalysisProvider {
         satellite: primary.geospatialInfo.satellitePlatform || 'Sentinel-2',
         sensor: primary.geospatialInfo.sensorType || 'MSI (10m)',
         modality: primary.modality,
-        dataStatus: 'PUBLIC_DATA',
+        dataStatus: 'DEMO_DATA',
         cloudCover: 5.2,
         observationPeriod: {
           beforeDate: input.temporalContext?.beforeDate || '2021-04-18',
@@ -514,7 +515,7 @@ export class MockAnalysisProvider implements AnalysisProvider {
       satellite: primary.geospatialInfo.satellitePlatform || 'Sentinel-2',
       sensor: primary.geospatialInfo.sensorType || 'MSI (10m)',
       modality: primary.modality,
-      dataStatus: 'PUBLIC_DATA',
+      dataStatus: 'DEMO_DATA',
       cloudCover: 3.5,
       observationPeriod: {
         beforeDate: primary.acquisitionDate || '2024-05-18',

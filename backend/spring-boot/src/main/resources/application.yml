@@ -1,6 +1,11 @@
 server:
   # Managed container platforms inject PORT. SERVER_PORT remains available for local use.
   port: ${PORT:${SERVER_PORT:8080}}
+  tomcat:
+    # /api/v1/analyze/raster carries base64-encoded uploaded imagery in the JSON body;
+    # Tomcat's 2MB defaults are far too small for that.
+    max-http-form-post-size: 25MB
+    max-swallow-size: 25MB
 
 spring:
   application:
@@ -21,8 +26,10 @@ services:
 
 app:
   cors:
-    # Comma-separated browser origins. Configure the deployed frontend origin in production.
-    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000}
+    # Comma-separated browser origin PATTERNS (wildcards allowed, e.g. https://*.vercel.app
+    # to also cover per-branch/per-PR preview deployments). Configure the deployed frontend
+    # origin(s) in production via CORS_ALLOWED_ORIGINS.
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:5173}
 
 management:
   endpoints:

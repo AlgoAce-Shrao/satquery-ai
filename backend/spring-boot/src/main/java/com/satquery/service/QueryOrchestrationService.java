@@ -146,6 +146,26 @@ public class QueryOrchestrationService {
         );
     }
 
+    /**
+     * Proxies a raster-analysis request straight through to eo-analysis-service's
+     * /api/v1/eo/analyze-raster. Unlike the text-query pipeline above, there is no meaningful
+     * rule-based fallback for "analyze these actual pixels" — if the EO service is unreachable
+     * this throws so the caller can surface a real error instead of fabricating a result.
+     */
+    public Map<String, Object> executeRasterAnalysis(Map<String, Object> requestBody) {
+        log.info("Proxying raster analysis to {}/api/v1/eo/analyze-raster (mode={})", eoServiceUrl, requestBody.get("mode"));
+        ResponseEntity<Map> response = restTemplate.postForEntity(
+            eoServiceUrl + "/api/v1/eo/analyze-raster",
+            requestBody,
+            Map.class
+        );
+        Map<String, Object> body = response.getBody();
+        if (body == null) {
+            throw new IllegalStateException("eo-analysis-service returned an empty body for /analyze-raster.");
+        }
+        return body;
+    }
+
     private Map<String, Object> createFallbackStructuredQuery(String rawQuery) {
         return Map.of(
             "query_id", "Q_" + UUID.randomUUID().toString().substring(0, 8).toUpperCase(),

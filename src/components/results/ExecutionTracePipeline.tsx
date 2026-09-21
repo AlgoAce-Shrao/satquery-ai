@@ -45,71 +45,32 @@ export const ExecutionTracePipeline: React.FC<ExecutionTracePipelineProps> = ({
     executionPipeline,
   } = activeResult;
 
-  // Standard 8-stage pipeline if not explicitly attached
+  // Honest fallback for results with no attached real trace (the catalog/demo query path):
+  // this describes what actually happened — rule-based catalog lookup — not a fabricated
+  // list of tools (GDAL/OpenCV/SentinelHub/etc.) that never ran for this result.
   const stages: ExecutionPipelineStage[] = executionPipeline || [
     {
       id: 'stg_1',
       stage: 'QUERY_RECEIVED',
-      title: 'Query Ingested & Tokenized',
-      description: `Normalized natural language query for geographic scope and temporal intent.`,
-      toolsUsed: ['NLP Spatial Entity Recognizer'],
+      title: 'Query Matched Against Observation Catalog',
+      description: `Keyword/rule-based matching against the pre-catalogued ${category} observation registry (no live model or raster processing).`,
+      toolsUsed: ['Rule-based keyword matcher'],
       durationMs: 120,
     },
     {
       id: 'stg_2',
       stage: 'TASK_IDENTIFIED',
-      title: 'Task Classifier: Remote Sensing Agent',
-      description: `Classified as ${category} change analysis requiring bi-temporal radiometric comparison.`,
-      modelsUsed: ['Gemini 2.5 Flash / GeoVLM Orchestrator'],
-      durationMs: 240,
+      title: 'Catalog Entry Selected',
+      description: `Resolved to a pre-recorded ${category} entry for ${regionName}.`,
+      durationMs: 90,
     },
     {
       id: 'stg_3',
-      stage: 'INPUT_VALIDATED',
-      title: 'Spatial Geometry & Sensor Filtering',
-      description: `Resolved target region ${regionName} to bounding polygon. Checked cloud-cover threshold (<15%).`,
-      toolsUsed: ['PostGIS Spatial Index', 'ST_Intersects STAC Catalog'],
-      durationMs: 310,
-    },
-    {
-      id: 'stg_4',
-      stage: 'SPECIALIST_TOOL_SELECTED',
-      title: 'EO Tool Dispatch: Multispectral & SAR',
-      description: `Dispatched ${satellite} (${sensor}) with calibrated surface reflectance & radar backscatter.`,
-      toolsUsed: ['SentinelHub STAC API', 'ESA Copernicus Open Access Hub'],
-      durationMs: 180,
-    },
-    {
-      id: 'stg_5',
-      stage: 'REMOTE_SENSING_ANALYSIS',
-      title: 'Pixel-Level Spectral Analysis',
-      description: `Calculated ${metric.name} delta (${metric.percentageChange > 0 ? '+' : ''}${metric.percentageChange}%).`,
-      toolsUsed: ['GDAL Raster Core', 'NumPy Multi-Spectral Engine'],
-      durationMs: 640,
-    },
-    {
-      id: 'stg_6',
-      stage: 'SPATIAL_EVIDENCE_EXTRACTED',
-      title: 'Bounding Box & Polygon Extraction',
-      description: `Vectorized anomaly perimeters into GeoJSON polygons with change status tagging.`,
-      toolsUsed: ['OpenCV Contour Vectorizer', 'Turf.js Geometric Simplifier'],
-      durationMs: 420,
-    },
-    {
-      id: 'stg_7',
-      stage: 'RESULT_VALIDATED',
-      title: 'Confidence Calibration & Cross-Check',
-      description: `Validated against historical baseline. Cross-sensor confidence calibrated at ${Math.round(confidence * 100)}%.`,
-      toolsUsed: ['Bayesian Calibration Layer'],
-      confidence,
-      durationMs: 190,
-    },
-    {
-      id: 'stg_8',
       stage: 'INSIGHT_GENERATED',
-      title: 'Observable Insight & Narrative Delivery',
-      description: `Formatted final spatial telemetry HUD and interactive before/after synchronization.`,
-      durationMs: 90,
+      title: 'Stored Metrics Retrieved',
+      description: `Retrieved pre-recorded ${metric.name} values (${metric.percentageChange > 0 ? '+' : ''}${metric.percentageChange}%) and ${satellite} (${sensor}) metadata from the catalog entry — not computed from live pixel data in this step.`,
+      confidence,
+      durationMs: 60,
     },
   ];
 
@@ -123,7 +84,7 @@ export const ExecutionTracePipeline: React.FC<ExecutionTracePipelineProps> = ({
         <div className="flex items-center gap-2">
           <Cpu className="w-4 h-4 text-[#3df2ff]" />
           <span className="text-[11px] font-bold uppercase tracking-wider text-white">
-            Observable Execution Pipeline (8 Stages)
+            Observable Execution Pipeline ({stages.length} Stages)
           </span>
         </div>
         <div className="flex items-center gap-2 text-white/50 text-[10px]">
@@ -133,7 +94,7 @@ export const ExecutionTracePipeline: React.FC<ExecutionTracePipelineProps> = ({
       </div>
 
       {/* Progress Bar Ribbon */}
-      <div className="grid grid-cols-8 gap-1 h-1.5 bg-white/5">
+      <div className="grid gap-1 h-1.5 bg-white/5" style={{ gridTemplateColumns: `repeat(${stages.length}, minmax(0, 1fr))` }}>
         {stages.map((stg, idx) => (
           <div
             key={idx}

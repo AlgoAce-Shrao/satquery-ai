@@ -51,6 +51,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
     { label: 'All Data Status', value: 'ALL' },
     { label: 'Public Benchmark', value: 'PUBLIC_DATA' },
     { label: 'Demo Synthesized', value: 'DEMO_DATA' },
+    { label: 'Real Uploaded-Image Analysis', value: 'USER_RASTER_ANALYSIS' },
   ];
 
   const activeFilterCount = [

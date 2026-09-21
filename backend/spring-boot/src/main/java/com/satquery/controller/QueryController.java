@@ -35,4 +35,17 @@ public class QueryController {
         Map<String, Object> response = orchestrationService.executeQueryPipeline(request.query().trim());
         return ResponseEntity.ok(response);
     }
+
+    @PostMapping("/analyze/raster")
+    public ResponseEntity<Map<String, Object>> analyzeRaster(@RequestBody Map<String, Object> request) {
+        try {
+            Map<String, Object> response = orchestrationService.executeRasterAnalysis(request);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.status(502).body(Map.of(
+                "error", "Raster analysis service is unavailable.",
+                "detail", String.valueOf(e.getMessage())
+            ));
+        }
+    }
 }

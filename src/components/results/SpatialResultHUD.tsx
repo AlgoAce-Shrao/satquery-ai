@@ -5,6 +5,7 @@
 
 import React from 'react';
 import { AnalysisResult } from '../../types/geospatial';
+import { getDataStatusBadge } from '../../lib/dataStatusLabels';
 import {
   ChevronLeft,
   ChevronRight,
@@ -118,13 +119,11 @@ export const SpatialResultHUD: React.FC<SpatialResultHUDProps> = ({
           {/* Data Status Badge */}
           <span
             className={`text-[8px] font-mono-code px-1.5 py-0.5 uppercase font-bold tracking-wider border ${
-              dataStatus === 'PUBLIC_DATA'
-                ? 'bg-[#3df2ff]/10 text-[#3df2ff] border-[#3df2ff]/40'
-                : 'bg-amber-400/10 text-amber-300 border-amber-400/40'
+              getDataStatusBadge(dataStatus).colorClass
             }`}
-            title={dataStatus === 'PUBLIC_DATA' ? 'Public Satellite Benchmark Observation' : 'Simulated Demonstration Observation'}
+            title={getDataStatusBadge(dataStatus).longLabel}
           >
-            {dataStatus === 'PUBLIC_DATA' ? 'PUB DATA' : 'DEMO'}
+            {getDataStatusBadge(dataStatus).shortLabel}
           </span>
 
           {/* Severity Badge */}

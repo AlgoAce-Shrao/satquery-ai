@@ -19,8 +19,11 @@ public class CorsConfig implements WebMvcConfigurer {
 
     @Override
     public void addCorsMappings(CorsRegistry registry) {
+        // allowedOriginPatterns (not allowedOrigins) so entries can use wildcards, e.g.
+        // "https://*.vercel.app" to cover per-branch/per-PR preview deployments in addition
+        // to the exact production origin.
         registry.addMapping("/api/**")
-            .allowedOrigins(allowedOrigins)
+            .allowedOriginPatterns(allowedOrigins)
             .allowedMethods("GET", "POST", "OPTIONS")
             .allowedHeaders("Content-Type")
             .maxAge(3600);

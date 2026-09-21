@@ -5,6 +5,7 @@
 
 import React from 'react';
 import { AnalysisResult } from '../../types/geospatial';
+import { getDataStatusBadge } from '../../lib/dataStatusLabels';
 import { X, ExternalLink, Satellite, ShieldCheck, Database, Layers, Bot, Cpu, CheckCircle2 } from 'lucide-react';
 
 interface EvidenceDrawerProps {
@@ -59,12 +60,11 @@ export const EvidenceDrawer: React.FC<EvidenceDrawerProps> = ({
           <div className="flex items-center gap-2">
             <span
               className={`text-[8px] font-mono-code px-2 py-0.5 uppercase font-bold border ${
-                dataStatus === 'PUBLIC_DATA'
-                  ? 'bg-[#3df2ff]/10 text-[#3df2ff] border-[#3df2ff]/40'
-                  : 'bg-amber-400/10 text-amber-300 border-amber-400/40'
+                getDataStatusBadge(dataStatus).colorClass
               }`}
+              title={getDataStatusBadge(dataStatus).longLabel}
             >
-              {dataStatus === 'PUBLIC_DATA' ? 'PUBLIC SATELLITE DATA' : 'DEMO OBSERVATION'}
+              {getDataStatusBadge(dataStatus).mediumLabel}
             </span>
             <button
               onClick={onClose}

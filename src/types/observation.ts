@@ -28,7 +28,10 @@ export type SensorType =
 
 export type ModalityType = 'OPTICAL' | 'SAR' | 'MULTIMODAL';
 
-export type DataStatus = 'PUBLIC_DATA' | 'DEMO_DATA';
+// PUBLIC_DATA: sourced from the public satellite benchmark catalogue.
+// DEMO_DATA: fabricated/simulated for demonstration (no real computation behind it).
+// USER_RASTER_ANALYSIS: real rule-based pixel analysis computed from a user-uploaded image.
+export type DataStatus = 'PUBLIC_DATA' | 'DEMO_DATA' | 'USER_RASTER_ANALYSIS';
 export type ObservationDataStatus = DataStatus;
 
 export interface SpectralBandData {

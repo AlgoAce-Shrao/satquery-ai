@@ -18,22 +18,34 @@ import { ToolRegistry } from './tools/toolRegistry';
 import { AnalysisProvider } from './providers/analysisProvider';
 import { MockAnalysisProvider } from './providers/mockAnalysisProvider';
 import { ColabMLAnalysisProvider } from './providers/colabMLAnalysisProvider';
+import { RealAnalysisProvider } from './providers/realAnalysisProvider';
 
 export class SatQueryOrchestrator {
   private static instance: SatQueryOrchestrator;
   private currentProvider: AnalysisProvider;
   private colabProvider: ColabMLAnalysisProvider;
+  private realProvider: RealAnalysisProvider;
   private mockProvider: MockAnalysisProvider;
   private hasConfiguredRemoteProvider: boolean;
+  private hasConfiguredGateway: boolean;
 
   private constructor() {
     const configuredEndpoint =
       (import.meta as any).env?.VITE_COLAB_INFERENCE_URL ||
       (import.meta as any).env?.VITE_COLAB_ML_SERVER_URL;
+    const gatewayUrl = (import.meta as any).env?.VITE_SPRING_BOOT_API_URL;
     this.mockProvider = new MockAnalysisProvider();
     this.colabProvider = new ColabMLAnalysisProvider(configuredEndpoint);
+    this.realProvider = new RealAnalysisProvider(gatewayUrl);
     this.hasConfiguredRemoteProvider = Boolean(configuredEndpoint);
-    this.currentProvider = this.hasConfiguredRemoteProvider ? this.colabProvider : this.mockProvider;
+    this.hasConfiguredGateway = Boolean(gatewayUrl);
+    // Preference order: the already-deployed gateway (real pixel analysis, no extra
+    // infra to stand up) > an explicitly configured external Colab/GPU endpoint > mock.
+    this.currentProvider = this.hasConfiguredGateway
+      ? this.realProvider
+      : this.hasConfiguredRemoteProvider
+      ? this.colabProvider
+      : this.mockProvider;
   }
 
   public static getInstance(): SatQueryOrchestrator {
@@ -47,13 +59,15 @@ export class SatQueryOrchestrator {
     return this.currentProvider;
   }
 
-  public setProvider(type: 'MOCK' | 'COLAB', customUrl?: string) {
+  public setProvider(type: 'MOCK' | 'COLAB' | 'REAL', customUrl?: string) {
     if (type === 'COLAB') {
       if (customUrl) {
         this.colabProvider.setEndpointUrl(customUrl);
         this.hasConfiguredRemoteProvider = true;
       }
       this.currentProvider = this.colabProvider;
+    } else if (type === 'REAL') {
+      this.currentProvider = this.realProvider;
     } else {
       this.currentProvider = this.mockProvider;
     }
@@ -118,7 +132,10 @@ export class SatQueryOrchestrator {
       recommendedWorkflow,
       selectedTools,
       stages,
-      confidenceScore: 0.94,
+      // Heuristic: routing confidence, not an analysis-result confidence. Higher when
+      // validation passed cleanly and a specialist tool was actually matched to the task.
+      confidenceScore:
+        (input.validationReport.canExecuteAnalysis ? 0.7 : 0.4) + Math.min(selectedTools.length, 2) * 0.1,
       reasoningNotes: [
         `Input mode [${input.mode}] matched with [${selectedTools.length}] specialist tools.`,
         `Intent [${classifiedIntent}] prioritized based on linguistic indicators in prompt.`,
@@ -136,8 +153,19 @@ export class SatQueryOrchestrator {
   ): Promise<AnalysisResult> {
     // Production uploads must use a real inference endpoint; mock analysis is development-only.
     let activeProvider = this.currentProvider;
+
+    if (activeProvider.type === 'REAL_RASTER_ENGINE') {
+      const isLive = await activeProvider.isAvailable();
+      if (!isLive) {
+        console.warn('Gateway raster-analysis endpoint unreachable. Falling back to Colab (if configured) or mock.');
+        activeProvider = this.hasConfiguredRemoteProvider ? this.colabProvider : this.mockProvider;
+      }
+    }
+
     if (activeProvider.type === 'MOCK_RULE_ENGINE' && (import.meta as any).env?.PROD) {
-      throw new Error('Image analysis is not configured. Set VITE_COLAB_INFERENCE_URL to a public inference endpoint.');
+      throw new Error(
+        'Image analysis is not reachable. The gateway (VITE_SPRING_BOOT_API_URL) and any configured Colab endpoint are both unavailable.'
+      );
     }
     if (activeProvider.type === 'COLAB_ML_SERVER') {
       const isLive = await activeProvider.isAvailable();
@@ -151,11 +179,12 @@ export class SatQueryOrchestrator {
     }
 
     // 2. Execute through provider
-    const result = await activeProvider.execute(input, query, onProgressStage);
+    const intent = this.classifyIntent(input, query);
+    const result = await activeProvider.execute(input, query, onProgressStage, intent);
     return result;
   }
 
-  private classifyIntent(input: AnalysisInput, query: string): string {
+  public classifyIntent(input: AnalysisInput, query: string): string {
     const q = query.toLowerCase();
     const mode = input.mode;
 

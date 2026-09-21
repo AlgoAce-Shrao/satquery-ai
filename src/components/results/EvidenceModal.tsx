@@ -5,7 +5,56 @@
 
 import React from 'react';
 import { AnalysisResult } from '../../types/geospatial';
-import { X, Database, ShieldCheck, BarChart2, Layers, Download, Check, Bot } from 'lucide-react';
+import { getDataStatusBadge } from '../../lib/dataStatusLabels';
+import { X, Database, ShieldCheck, BarChart2, Layers, Download, FileText, Check, Bot } from 'lucide-react';
+
+function downloadBlob(filename: string, content: string, mimeType: string) {
+  const blob = new Blob([content], { type: mimeType });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = filename;
+  document.body.appendChild(anchor);
+  anchor.click();
+  document.body.removeChild(anchor);
+  URL.revokeObjectURL(url);
+}
+
+function buildTextReport(result: AnalysisResult): string {
+  const lines = [
+    `SATQUERY AI — EVIDENCE REPORT`,
+    `Generated: ${new Date().toISOString()}`,
+    ``,
+    `Site: ${result.siteCode} | ${result.regionName}, ${result.country}`,
+    `Data status: ${getDataStatusBadge(result.dataStatus).longLabel}`,
+    ``,
+    `HEADLINE: ${result.headline}`,
+    result.evidenceNarrative,
+    ``,
+    `METRIC: ${result.metric.name}`,
+    `  Before (${result.observationPeriod.beforeLabel}, ${result.observationPeriod.beforeDate}): ${result.metric.beforeValue}`,
+    `  After (${result.observationPeriod.afterLabel}, ${result.observationPeriod.afterDate}): ${result.metric.afterValue}`,
+    `  Change: ${result.metric.percentageChange}% (${result.metric.severity})`,
+    `  Confidence: ${Math.round(result.confidence * 100)}%`,
+    ``,
+    `SENSOR: ${result.satellite} / ${result.sensor} (${result.modality})`,
+    `Cloud cover: ${result.cloudCover}% | Affected area: ${result.areaAffectedSqKm} km²`,
+    ``,
+    `SPECTRAL BANDS:`,
+    ...result.spectralBands.map(
+      (b) => `  ${b.band} (${b.name}, ${b.wavelength}): before=${b.beforeReflectance} after=${b.afterReflectance}`
+    ),
+    ``,
+    `PRIMARY DRIVERS: ${result.primaryDrivers.join(', ')}`,
+  ];
+  if (result.executionPipeline && result.executionPipeline.length > 0) {
+    lines.push('', 'EXECUTION TRACE:');
+    for (const stage of result.executionPipeline) {
+      lines.push(`  [${stage.stage}] ${stage.title} — ${stage.description}`);
+    }
+  }
+  return lines.join('\n');
+}
 
 interface EvidenceModalProps {
   isOpen: boolean;
@@ -18,14 +67,20 @@ export const EvidenceModal: React.FC<EvidenceModalProps> = ({
   onClose,
   result,
 }) => {
-  const [copied, setCopied] = React.useState(false);
+  const [downloaded, setDownloaded] = React.useState<'JSON' | 'TXT' | null>(null);
 
   if (!isOpen || !result) return null;
 
-  const handleCopyJson = () => {
-    navigator.clipboard.writeText(JSON.stringify(result, null, 2));
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  const handleDownloadJson = () => {
+    downloadBlob(`${result.siteCode}_evidence.json`, JSON.stringify(result, null, 2), 'application/json');
+    setDownloaded('JSON');
+    setTimeout(() => setDownloaded(null), 2000);
+  };
+
+  const handleDownloadReport = () => {
+    downloadBlob(`${result.siteCode}_report.txt`, buildTextReport(result), 'text/plain');
+    setDownloaded('TXT');
+    setTimeout(() => setDownloaded(null), 2000);
   };
 
   return (
@@ -40,12 +95,11 @@ export const EvidenceModal: React.FC<EvidenceModalProps> = ({
               </span>
               <span
                 className={`text-[9px] font-mono-code px-2 py-0.5 uppercase font-bold border ${
-                  result.dataStatus === 'PUBLIC_DATA'
-                    ? 'bg-[#3df2ff]/15 text-[#3df2ff] border-[#3df2ff]/40'
-                    : 'bg-amber-400/15 text-amber-300 border-amber-400/40'
+                  getDataStatusBadge(result.dataStatus).colorClass
                 }`}
+                title={getDataStatusBadge(result.dataStatus).longLabel}
               >
-                {result.dataStatus === 'PUBLIC_DATA' ? 'PUBLIC DATA' : 'DEMO DATA'}
+                {getDataStatusBadge(result.dataStatus).mediumLabel}
               </span>
               <h3 className="text-xl font-bold uppercase tracking-tight text-white">
                 Spectral Evidence & Agent Trace
@@ -190,13 +244,22 @@ export const EvidenceModal: React.FC<EvidenceModalProps> = ({
 
         {/* Footer Actions */}
         <div className="flex items-center justify-between border-t border-white/10 pt-4 font-mono-code">
-          <button
-            onClick={handleCopyJson}
-            className="px-4 py-2 bg-white/10 hover:bg-white/20 border border-white/20 text-xs font-bold uppercase tracking-widest text-white transition-all flex items-center gap-2"
-          >
-            {copied ? <Check className="w-3.5 h-3.5 text-[#3df2ff]" /> : <Download className="w-3.5 h-3.5" />}
-            <span>{copied ? 'JSON Copied' : 'Copy Evidence JSON'}</span>
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleDownloadReport}
+              className="px-4 py-2 bg-white/10 hover:bg-white/20 border border-white/20 text-xs font-bold uppercase tracking-widest text-white transition-all flex items-center gap-2"
+            >
+              {downloaded === 'TXT' ? <Check className="w-3.5 h-3.5 text-[#3df2ff]" /> : <FileText className="w-3.5 h-3.5" />}
+              <span>{downloaded === 'TXT' ? 'Downloaded' : 'Download Report (.txt)'}</span>
+            </button>
+            <button
+              onClick={handleDownloadJson}
+              className="px-4 py-2 bg-white/10 hover:bg-white/20 border border-white/20 text-xs font-bold uppercase tracking-widest text-white transition-all flex items-center gap-2"
+            >
+              {downloaded === 'JSON' ? <Check className="w-3.5 h-3.5 text-[#3df2ff]" /> : <Download className="w-3.5 h-3.5" />}
+              <span>{downloaded === 'JSON' ? 'Downloaded' : 'Download Evidence (.json)'}</span>
+            </button>
+          </div>
           <button
             onClick={onClose}
             className="px-6 py-2 bg-[#3df2ff] text-black font-black text-xs uppercase tracking-widest hover:bg-white transition-all"

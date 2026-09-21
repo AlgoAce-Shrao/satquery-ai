@@ -13,11 +13,12 @@ import { AnalysisResult, ExecutionPipelineStage } from '../../types/geospatial';
 export interface AnalysisProvider {
   id: string;
   name: string;
-  type: 'MOCK_RULE_ENGINE' | 'COLAB_ML_SERVER';
+  type: 'MOCK_RULE_ENGINE' | 'COLAB_ML_SERVER' | 'REAL_RASTER_ENGINE';
   isAvailable(): Promise<boolean>;
   execute(
     input: AnalysisInput,
     query: string,
-    onProgressStage?: (stage: ExecutionPipelineStage) => void
+    onProgressStage?: (stage: ExecutionPipelineStage) => void,
+    intent?: string
   ): Promise<AnalysisResult>;
 }

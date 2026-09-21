@@ -1,8 +1,8 @@
-# NLP Service Dockerfile
+# NLP Service Dockerfile — build context is the repo root (see docker-compose.yml / render.yaml)
 FROM python:3.11-slim
 WORKDIR /app
-COPY requirements.txt .
+COPY services/nlp-service/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
-COPY . .
+COPY services/nlp-service/ .
 EXPOSE 8001
 CMD ["sh", "-c", "exec uvicorn app.main:app --host 0.0.0.0 --port \"${PORT:-8001}\""]

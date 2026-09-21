@@ -1,0 +1,73 @@
+# Render Blueprint — one-shot deploy of the SatQuery AI backend (gateway + 3 Python
+# services + PostGIS). Deploy via the Render dashboard: New -> Blueprint -> point at this repo.
+#
+# IMPORTANT: the inter-service URLs below assume you keep the `name:` values as-is
+# (Render service URLs are https://<name>.onrender.com). If you rename a service when
+# accepting the blueprint, update the corresponding *_SERVICE_URL env var to match.
+#
+# All services are on the `free` plan by default (cold starts after ~15 min idle; the
+# gateway's RestTemplate timeouts are already tuned to tolerate this — see application.yml).
+# The free Postgres instance expires after 30 days unless upgraded.
+
+databases:
+  - name: satquery-postgres
+    plan: free
+    postgresMajorVersion: "16"
+
+services:
+  - type: web
+    name: satquery-gateway
+    runtime: docker
+    dockerfilePath: ./docker/Dockerfile.spring-boot
+    dockerContext: .
+    plan: free
+    healthCheckPath: /api/v1/health
+    envVars:
+      - key: NLP_SERVICE_URL
+        value: https://satquery-nlp-service.onrender.com
+      - key: DATA_SERVICE_URL
+        value: https://satquery-data-service.onrender.com
+      - key: EO_SERVICE_URL
+        value: https://satquery-eo-service.onrender.com
+      - key: CORS_ALLOWED_ORIGINS
+        value: https://*.vercel.app,http://localhost:3000,http://localhost:5173
+      - key: DOWNSTREAM_CONNECT_TIMEOUT_MS
+        value: "10000"
+      - key: DOWNSTREAM_READ_TIMEOUT_MS
+        value: "30000"
+
+  - type: web
+    name: satquery-nlp-service
+    runtime: docker
+    dockerfilePath: ./docker/Dockerfile.nlp
+    dockerContext: .
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: LLM_PROVIDER
+        value: rule_based
+      - key: GEMINI_API_KEY
+        sync: false
+
+  - type: web
+    name: satquery-data-service
+    runtime: docker
+    dockerfilePath: ./docker/Dockerfile.data-service
+    dockerContext: .
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: satquery-postgres
+          property: connectionString
+      - key: DATA_SERVICE_ALLOW_SEED_FALLBACK
+        value: "false"
+
+  - type: web
+    name: satquery-eo-service
+    runtime: docker
+    dockerfilePath: ./docker/Dockerfile.eo-analysis
+    dockerContext: .
+    plan: free
+    healthCheckPath: /health

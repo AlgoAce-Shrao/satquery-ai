@@ -1,3 +1,4 @@
+import glob
 import json
 import logging
 import os
@@ -20,6 +21,7 @@ class SpatialRepository:
         self._pool: Optional[asyncpg.Pool] = None
         self._database_error: Optional[str] = None
         self._seed_catalog = self._create_seed_catalog()
+        self._migrations_dir = os.getenv("MIGRATIONS_DIR", "/app/migrations")
 
     async def connect(self) -> None:
         if not self._database_url:
@@ -41,6 +43,7 @@ class SpatialRepository:
                 await connection.fetchval("SELECT 1")
             self._database_error = None
             logger.info("Connected to the PostGIS observation catalog.")
+            await self._apply_migrations()
         except Exception as error:
             self._pool = None
             self._database_error = str(error)
@@ -48,6 +51,35 @@ class SpatialRepository:
                 logger.warning("PostGIS connection failed; using the explicit seed fallback: %s", error)
             else:
                 logger.error("PostGIS connection failed: %s", error)
+
+    async def _apply_migrations(self) -> None:
+        """Self-installs the PostGIS schema on a fresh database (e.g. a newly provisioned
+        managed Postgres on Render). Schema migrations use CREATE ... IF NOT EXISTS so they
+        are safe to re-run on every boot; seed-data migrations only run once, guarded by a
+        row-count check, since they contain plain INSERTs with no ON CONFLICT clause."""
+        if not self._pool:
+            return
+        migration_files = sorted(glob.glob(os.path.join(self._migrations_dir, "*.sql")))
+        if not migration_files:
+            logger.warning("No migration files found under %s; skipping self-migration.", self._migrations_dir)
+            return
+
+        async with self._pool.acquire() as connection:
+            try:
+                existing_regions = await connection.fetchval("SELECT COUNT(*) FROM regions")
+            except asyncpg.exceptions.UndefinedTableError:
+                existing_regions = 0
+
+            for path in migration_files:
+                filename = os.path.basename(path)
+                is_seed_migration = "seed" in filename.lower()
+                if is_seed_migration and existing_regions:
+                    logger.info("Skipping %s: seed data already present (%s regions).", filename, existing_regions)
+                    continue
+                with open(path, "r", encoding="utf-8") as handle:
+                    sql = handle.read()
+                logger.info("Applying migration %s", filename)
+                await connection.execute(sql)
 
     async def close(self) -> None:
         if self._pool:
