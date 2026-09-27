@@ -75,14 +75,14 @@ export const ExecutionTracePipeline: React.FC<ExecutionTracePipelineProps> = ({
   ];
 
   return (
-    <div className="bg-[#08080c] border border-white/15 p-4 space-y-3 font-mono-code text-xs select-none">
+    <div className="bg-sq-base border border-white/15 p-4 space-y-3 font-mono-code text-xs select-none">
       {/* Header */}
       <div
         onClick={() => setIsExpanded(!isExpanded)}
         className="flex items-center justify-between cursor-pointer hover:text-white text-white/80 transition-colors"
       >
         <div className="flex items-center gap-2">
-          <Cpu className="w-4 h-4 text-[#3df2ff]" />
+          <Cpu className="w-4 h-4 text-sq-accent" />
           <span className="text-[11px] font-bold uppercase tracking-wider text-white">
             Observable Execution Pipeline ({stages.length} Stages)
           </span>
@@ -98,7 +98,7 @@ export const ExecutionTracePipeline: React.FC<ExecutionTracePipelineProps> = ({
         {stages.map((stg, idx) => (
           <div
             key={idx}
-            className="h-full bg-[#3df2ff] shadow-[0_0_8px_rgba(61,242,255,0.8)] transition-all"
+            className="h-full bg-sq-accent shadow-[0_0_8px_rgba(166,184,106,0.8)] transition-all"
             title={`${idx + 1}. ${stg.stage}`}
           />
         ))}
@@ -114,7 +114,7 @@ export const ExecutionTracePipeline: React.FC<ExecutionTracePipelineProps> = ({
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1.5">
-                  <span className="w-4 h-4 rounded-full bg-[#3df2ff]/20 text-[#3df2ff] border border-[#3df2ff]/40 flex items-center justify-center font-bold text-[9px]">
+                  <span className="w-4 h-4 rounded-full bg-sq-accent/20 text-sq-accent border border-sq-accent/40 flex items-center justify-center font-bold text-[9px]">
                     {index + 1}
                   </span>
                   <span className="text-white font-bold">{stg.title}</span>

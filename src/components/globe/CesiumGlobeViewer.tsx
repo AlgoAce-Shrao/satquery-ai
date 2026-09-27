@@ -1,7 +1,9 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import * as Cesium from 'cesium';
 import 'cesium/Build/Cesium/Widgets/widgets.css';
-import { AnalysisResult } from '../../types/geospatial';
+import { AnalysisResult, SpatialEvidenceItem } from '../../types/geospatial';
+import { describeRegion, regionAnchor, TONE_HEX, InsightTone } from '../../lib/geo/regionInsight';
+import { RegionCallout, RegionCalloutHandle } from './RegionCallout';
 import {
   Compass,
   Layers,
@@ -39,6 +41,52 @@ interface CesiumGlobeViewerProps {
   onTelemetryChange?: (telemetry: TelemetryData) => void;
 }
 
+const EVIDENCE_TONE: Record<NonNullable<SpatialEvidenceItem['changeStatus']>, InsightTone> = {
+  REMOVED_DECREASED: 'critical',
+  NEW_INCREASED: 'positive',
+  UNCHANGED: 'neutral',
+};
+
+/** Evidence items that are genuinely separate features (not a copy of the main polygon). */
+function distinctSubRegions(result: AnalysisResult): SpatialEvidenceItem[] {
+  const main = result.polygon ?? [];
+  return (result.spatialEvidence ?? []).filter((item) => {
+    if (!item.coordinates || item.coordinates.length < 3) return false;
+    const same =
+      item.coordinates.length === main.length &&
+      item.coordinates.every((c, i) => c.lat === main[i]?.lat && c.lon === main[i]?.lon);
+    return !same;
+  });
+}
+
+/** Unreferenced uploads resolve to 0,0 at orbital altitude — there is nothing real to point at. */
+function hasRealLocation(result: AnalysisResult) {
+  return !(result.location.lat === 0 && result.location.lon === 0 && (result.camera?.altitude ?? 0) >= 20000000);
+}
+
+/**
+ * Flies so the region sits in the middle of the view. (Placing the camera directly
+ * above the site and tilting to the horizon leaves the site at the screen's bottom edge.)
+ */
+function flyToRegion(
+  viewer: Cesium.Viewer,
+  result: AnalysisResult,
+  options: { duration: number; headingDeg?: number; complete?: () => void; cancel?: () => void }
+) {
+  const { lat, lon } = regionAnchor(result);
+  const { altitude = 1200000, heading = 0, pitch = -55 } = result.camera || {};
+  const pitchRad = Cesium.Math.toRadians(Math.min(-20, pitch));
+  // Keep roughly the configured altitude by converting it to a slant range.
+  const range = altitude / Math.sin(-pitchRad);
+  viewer.camera.flyToBoundingSphere(new Cesium.BoundingSphere(Cesium.Cartesian3.fromDegrees(lon, lat, 0), 1), {
+    offset: new Cesium.HeadingPitchRange(Cesium.Math.toRadians(options.headingDeg ?? heading), pitchRad, range),
+    duration: options.duration,
+    easingFunction: Cesium.EasingFunction.QUADRATIC_IN_OUT,
+    complete: options.complete,
+    cancel: options.cancel,
+  });
+}
+
 export const CesiumGlobeViewer: React.FC<CesiumGlobeViewerProps> = ({
   activeResult,
   allResults,
@@ -61,6 +109,12 @@ export const CesiumGlobeViewer: React.FC<CesiumGlobeViewerProps> = ({
   const subRegionEntitiesRef = useRef<Cesium.Entity[]>([]);
   const boundingBoxEntityRef = useRef<Cesium.Entity | null>(null);
   const markersEntitiesRef = useRef<Cesium.Entity[]>([]);
+  const highlightEntitiesRef = useRef<Cesium.Entity[]>([]);
+  const allResultsRef = useRef<AnalysisResult[]>(allResults);
+  allResultsRef.current = allResults;
+  const calloutRef = useRef<RegionCalloutHandle>(null);
+  const activeAnchorRef = useRef<Cesium.Cartesian3 | null>(null);
+  const flightDoneRef = useRef(false);
 
   // Live real telemetry from Cesium camera
   const [telemetry, setTelemetry] = useState<TelemetryData>({
@@ -75,6 +129,10 @@ export const CesiumGlobeViewer: React.FC<CesiumGlobeViewerProps> = ({
   const [is2DMode, setIs2DMode] = useState<boolean>(false);
   const [hoveredSite, setHoveredSite] = useState<AnalysisResult | null>(null);
   const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
+  const activeInsight = useMemo(
+    () => (activeResult && hasRealLocation(activeResult) ? describeRegion(activeResult) : null),
+    [activeResult]
+  );
 
   // Initialize Cesium Viewer
   useEffect(() => {
@@ -116,11 +174,11 @@ export const CesiumGlobeViewer: React.FC<CesiumGlobeViewerProps> = ({
 
     // Enable high-contrast dark space background & realistic atmosphere
     const scene = viewer.scene;
-    scene.backgroundColor = Cesium.Color.fromCssColorString('#050506');
+    scene.backgroundColor = Cesium.Color.fromCssColorString('#11120F');
     scene.globe.enableLighting = true;
     scene.globe.showGroundAtmosphere = true;
     scene.globe.atmosphereLightIntensity = 10.0;
-    scene.globe.baseColor = Cesium.Color.fromCssColorString('#0b1420');
+    scene.globe.baseColor = Cesium.Color.fromCssColorString('#161711');
 
     // Add High-Resolution ESRI World Imagery (Global Satellite Photorealism)
     try {
@@ -265,7 +323,7 @@ export const CesiumGlobeViewer: React.FC<CesiumGlobeViewerProps> = ({
         const entity = pickedObject.id as Cesium.Entity;
         if (entity.properties && entity.properties.hasProperty('resultId')) {
           const resultId = entity.properties.getValue(Cesium.JulianDate.now()).resultId;
-          const found = allResults.find((r) => r.id === resultId);
+          const found = allResultsRef.current.find((r) => r.id === resultId);
           if (found) {
             setHoveredSite(found);
             setTooltipPos({ x: movement.endPosition.x, y: movement.endPosition.y });
@@ -276,10 +334,35 @@ export const CesiumGlobeViewer: React.FC<CesiumGlobeViewerProps> = ({
       setHoveredSite(null);
     }, Cesium.ScreenSpaceEventType.MOUSE_MOVE);
 
+    // Keep the active-region callout pinned to its anchor as the camera moves.
+    const scratchNormal = new Cesium.Cartesian3();
+    const scratchToCamera = new Cesium.Cartesian3();
+    const placeCallout = () => {
+      const handle = calloutRef.current;
+      if (!handle || viewer.isDestroyed()) return;
+      const canvas = viewer.scene.canvas;
+      const anchor = activeAnchorRef.current;
+      if (!anchor || !flightDoneRef.current) {
+        handle.place(0, 0, false, canvas.clientWidth, canvas.clientHeight);
+        return;
+      }
+      const win = Cesium.SceneTransforms.worldToWindowCoordinates(viewer.scene, anchor);
+      // Horizon test: hide when the anchor is on the far side of the globe.
+      const facing =
+        viewer.scene.mode !== Cesium.SceneMode.SCENE3D ||
+        Cesium.Cartesian3.dot(
+          Cesium.Cartesian3.normalize(anchor, scratchNormal),
+          Cesium.Cartesian3.subtract(viewer.camera.positionWC, anchor, scratchToCamera)
+        ) > 0;
+      handle.place(win?.x ?? 0, win?.y ?? 0, Boolean(win) && facing, canvas.clientWidth, canvas.clientHeight);
+    };
+    const removePostRender = viewer.scene.postRender.addEventListener(placeCallout);
+
     // Cleanup
     return () => {
       removeCameraChanged();
       removePreRender();
+      removePostRender();
       handler.destroy();
       if (!viewer.isDestroyed()) {
         viewer.destroy();
@@ -303,36 +386,38 @@ export const CesiumGlobeViewer: React.FC<CesiumGlobeViewerProps> = ({
       const isActive = activeResult?.id === res.id;
       const { lat, lon } = res.location;
 
-      // Color scheme according to severity and active state
-      const isCritical = res.metric.severity === 'CRITICAL';
+      if (!hasRealLocation(res)) return;
+
+      // Pin colour encodes what happened (loss / gain / mixed); the label names it.
+      const insight = describeRegion(res);
       const pinColor = isActive
-        ? Cesium.Color.fromCssColorString('#3df2ff')
-        : isCritical
-        ? Cesium.Color.fromCssColorString('#ff4e00')
-        : Cesium.Color.fromCssColorString('#f59e0b');
+        ? Cesium.Color.fromCssColorString('#A6B86A')
+        : Cesium.Color.fromCssColorString(TONE_HEX[insight.tone]);
+      const isSevere = res.metric.severity === 'CRITICAL' || res.metric.severity === 'HIGH';
 
       // 1. Point / Pin Entity
       const entity = viewer.entities.add({
         position: Cesium.Cartesian3.fromDegrees(lon, lat, 100),
         point: {
-          pixelSize: isActive ? 16 : 10,
+          pixelSize: isActive ? 16 : isSevere ? 11 : 9,
           color: pinColor,
-          outlineColor: Cesium.Color.WHITE,
+          outlineColor: Cesium.Color.fromCssColorString('#E6E2D6'),
           outlineWidth: isActive ? 3 : 1.5,
           disableDepthTestDistance: Number.POSITIVE_INFINITY,
           heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
         },
         label: {
-          text: `${res.rank}. ${res.regionName}`,
-          font: isActive ? 'bold 12px Plus Jakarta Sans, sans-serif' : '10px Plus Jakarta Sans, sans-serif',
-          fillColor: Cesium.Color.WHITE,
-          outlineColor: Cesium.Color.BLACK,
+          text: `${res.rank}. ${res.regionName}\n${insight.headline} · ${insight.deltaText}`,
+          font: isActive ? 'bold 12px IBM Plex Sans, sans-serif' : '10px IBM Plex Sans, sans-serif',
+          fillColor: Cesium.Color.fromCssColorString('#E6E2D6'),
+          outlineColor: Cesium.Color.fromCssColorString('#11120F'),
           outlineWidth: 3,
           style: Cesium.LabelStyle.FILL_AND_OUTLINE,
           verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
           pixelOffset: new Cesium.Cartesian2(0, isActive ? -18 : -12),
           disableDepthTestDistance: Number.POSITIVE_INFINITY,
-          distanceDisplayCondition: new Cesium.DistanceDisplayCondition(0, 8000000),
+          distanceDisplayCondition: new Cesium.DistanceDisplayCondition(0, 6000000),
+          show: !isActive, // the active region gets the full callout instead
         },
         properties: new Cesium.PropertyBag({
           resultId: res.id,
@@ -343,6 +428,55 @@ export const CesiumGlobeViewer: React.FC<CesiumGlobeViewerProps> = ({
       markersEntitiesRef.current.push(entity);
     });
   }, [allResults, activeResult, showMarkers]);
+
+  // Active-region highlight: anchor for the callout / pulse overlay + labelled sub-regions.
+  // (The pulse is drawn in the DOM overlay: translucent billboards over classified ground
+  // polygons render as dark discs with order-independent translucency enabled.)
+  useEffect(() => {
+    const viewer = viewerRef.current;
+    if (!viewer || viewer.isDestroyed()) return;
+
+    highlightEntitiesRef.current.forEach((e) => viewer.entities.remove(e));
+    highlightEntitiesRef.current = [];
+    activeAnchorRef.current = null;
+    if (!activeResult || !hasRealLocation(activeResult)) return;
+
+    const { lat, lon } = regionAnchor(activeResult);
+    activeAnchorRef.current = Cesium.Cartesian3.fromDegrees(lon, lat, 0);
+
+    // Separate grounded features (e.g. AI vision boxes on a georeferenced upload)
+    distinctSubRegions(activeResult).forEach((item) => {
+      const c = item.coordinates;
+      const cLat = c.reduce((sum, pt) => sum + pt.lat, 0) / c.length;
+      const cLon = c.reduce((sum, pt) => sum + pt.lon, 0) / c.length;
+      const color = Cesium.Color.fromCssColorString(TONE_HEX[EVIDENCE_TONE[item.changeStatus ?? 'UNCHANGED']]);
+      highlightEntitiesRef.current.push(
+        viewer.entities.add({
+          position: Cesium.Cartesian3.fromDegrees(cLon, cLat, 0),
+          point: {
+            pixelSize: 6,
+            color,
+            outlineColor: Cesium.Color.fromCssColorString('#11120F'),
+            outlineWidth: 1.5,
+            disableDepthTestDistance: Number.POSITIVE_INFINITY,
+            heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
+          },
+          label: {
+            text: item.metricDelta ? `${item.label}\n${item.metricDelta}` : item.label,
+            font: '10px IBM Plex Sans, sans-serif',
+            fillColor: color,
+            outlineColor: Cesium.Color.fromCssColorString('#11120F'),
+            outlineWidth: 3,
+            style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+            verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+            pixelOffset: new Cesium.Cartesian2(0, -9),
+            disableDepthTestDistance: Number.POSITIVE_INFINITY,
+            distanceDisplayCondition: new Cesium.DistanceDisplayCondition(0, 2500000),
+          },
+        })
+      );
+    });
+  }, [activeResult]);
 
   // Update Polygon Overlays & Sub-Region Change Annotations for Active Result
   useEffect(() => {
@@ -382,7 +516,7 @@ export const CesiumGlobeViewer: React.FC<CesiumGlobeViewerProps> = ({
           positions: boxPositions,
           width: 2.5,
           material: new Cesium.PolylineDashMaterialProperty({
-            color: Cesium.Color.fromCssColorString('#3df2ff'),
+            color: Cesium.Color.fromCssColorString('#A6B86A'),
             gapColor: Cesium.Color.TRANSPARENT,
             dashLength: 16.0,
           }),
@@ -393,18 +527,19 @@ export const CesiumGlobeViewer: React.FC<CesiumGlobeViewerProps> = ({
 
     // 2. Render sub-region change items if available
     if (activeResult.spatialEvidence && activeResult.spatialEvidence.length > 0) {
-      activeResult.spatialEvidence.forEach((item) => {
+      // Items identical to the main polygon are skipped: stacking both fills hid the imagery.
+      distinctSubRegions(activeResult).forEach((item) => {
         if (!item.coordinates || item.coordinates.length < 3) return;
 
-        let itemColor = Cesium.Color.fromCssColorString('#10b981').withAlpha(0.65);
-        let itemOutline = Cesium.Color.fromCssColorString('#10b981');
+        let itemColor = Cesium.Color.fromCssColorString('#7FA66A').withAlpha(0.65);
+        let itemOutline = Cesium.Color.fromCssColorString('#7FA66A');
 
         if (item.changeStatus === 'NEW_INCREASED') {
-          itemColor = Cesium.Color.fromCssColorString('#06b6d4').withAlpha(0.7);
-          itemOutline = Cesium.Color.fromCssColorString('#3df2ff');
+          itemColor = Cesium.Color.fromCssColorString('#A6B86A').withAlpha(0.7);
+          itemOutline = Cesium.Color.fromCssColorString('#A6B86A');
         } else if (item.changeStatus === 'REMOVED_DECREASED') {
-          itemColor = Cesium.Color.fromCssColorString('#ef4444').withAlpha(0.7);
-          itemOutline = Cesium.Color.fromCssColorString('#ff4e00');
+          itemColor = Cesium.Color.fromCssColorString('#B85C4A').withAlpha(0.7);
+          itemOutline = Cesium.Color.fromCssColorString('#B85C4A');
         }
 
         const flatCoords: number[] = [];
@@ -425,21 +560,21 @@ export const CesiumGlobeViewer: React.FC<CesiumGlobeViewerProps> = ({
     // 3. Render Main Result Polygon
     if (activeResult.polygon && activeResult.polygon.length >= 3) {
       // Determine polygon fill color based on visualization mode
-      let fillColor = Cesium.Color.fromCssColorString('#ff4e00').withAlpha(overlayOpacity * 0.75);
-      let outlineColor = Cesium.Color.fromCssColorString('#ff4e00');
+      let fillColor = Cesium.Color.fromCssColorString('#B85C4A').withAlpha(overlayOpacity * 0.75);
+      let outlineColor = Cesium.Color.fromCssColorString('#C4705E');
 
       if (visualizationMode === 'BEFORE') {
-        fillColor = Cesium.Color.fromCssColorString('#10b981').withAlpha(overlayOpacity * 0.75);
-        outlineColor = Cesium.Color.fromCssColorString('#10b981');
+        fillColor = Cesium.Color.fromCssColorString('#7FA66A').withAlpha(overlayOpacity * 0.75);
+        outlineColor = Cesium.Color.fromCssColorString('#7FA66A');
       } else if (visualizationMode === 'AFTER') {
-        fillColor = Cesium.Color.fromCssColorString('#d97706').withAlpha(overlayOpacity * 0.75);
-        outlineColor = Cesium.Color.fromCssColorString('#d97706');
+        fillColor = Cesium.Color.fromCssColorString('#D39B4A').withAlpha(overlayOpacity * 0.75);
+        outlineColor = Cesium.Color.fromCssColorString('#D39B4A');
       } else if (activeResult.analysisType === 'WATER_EXPANSION' || activeResult.category === 'WATER_CHANGE' || activeResult.category === 'FLOOD') {
-        fillColor = Cesium.Color.fromCssColorString('#0284c7').withAlpha(overlayOpacity * 0.8);
-        outlineColor = Cesium.Color.fromCssColorString('#38bdf8');
+        fillColor = Cesium.Color.fromCssColorString('#6F8C8E').withAlpha(overlayOpacity * 0.8);
+        outlineColor = Cesium.Color.fromCssColorString('#8FA8A9');
       } else if (activeResult.analysisType === 'URBAN_GROWTH' || activeResult.category === 'URBAN_EXPANSION') {
-        fillColor = Cesium.Color.fromCssColorString('#c026d3').withAlpha(overlayOpacity * 0.8);
-        outlineColor = Cesium.Color.fromCssColorString('#e879f9');
+        fillColor = Cesium.Color.fromCssColorString('#C4A484').withAlpha(overlayOpacity * 0.8);
+        outlineColor = Cesium.Color.fromCssColorString('#D6BC9C');
       }
 
       // Convert polygon points to Cesium Cartesian3 positions
@@ -483,6 +618,18 @@ export const CesiumGlobeViewer: React.FC<CesiumGlobeViewerProps> = ({
     const viewer = viewerRef.current;
     if (!viewer || viewer.isDestroyed() || !activeResult) return;
 
+    // The callout appears once the camera has arrived, so it never trails the flight.
+    flightDoneRef.current = false;
+    const settle = () => {
+      flightDoneRef.current = true;
+    };
+
+    if (hasRealLocation(activeResult)) {
+      flyToRegion(viewer, activeResult, { duration: 2.2, complete: settle, cancel: settle });
+      return;
+    }
+
+    // Unreferenced upload: return to a global overview.
     const { lat, lon } = activeResult.location;
     const { altitude, heading = 0, pitch = -55 } = activeResult.camera || {
       altitude: 1400000,
@@ -499,6 +646,8 @@ export const CesiumGlobeViewer: React.FC<CesiumGlobeViewerProps> = ({
       },
       duration: 2.2,
       easingFunction: Cesium.EasingFunction.QUADRATIC_IN_OUT,
+      complete: settle,
+      cancel: settle,
     });
   }, [activeResult]);
 
@@ -545,17 +694,12 @@ export const CesiumGlobeViewer: React.FC<CesiumGlobeViewerProps> = ({
   const handleLocateActive = () => {
     if (!activeResult || !viewerRef.current) return;
     if (onUserInteract) onUserInteract();
-    const { lat, lon } = activeResult.location;
-    const { altitude = 1200000, pitch = -55 } = activeResult.camera || {};
-    viewerRef.current.camera.flyTo({
-      destination: Cesium.Cartesian3.fromDegrees(lon, lat, altitude),
-      orientation: {
-        heading: 0,
-        pitch: Cesium.Math.toRadians(pitch),
-        roll: 0,
-      },
-      duration: 1.8,
-    });
+    if (!hasRealLocation(activeResult)) return;
+    flightDoneRef.current = false;
+    const settle = () => {
+      flightDoneRef.current = true;
+    };
+    flyToRegion(viewerRef.current, activeResult, { duration: 1.8, headingDeg: 0, complete: settle, cancel: settle });
   };
 
   const handleToggle2D3D = () => {
@@ -578,7 +722,7 @@ export const CesiumGlobeViewer: React.FC<CesiumGlobeViewerProps> = ({
       {/* Top Left Live Camera Telemetry Badge */}
       <div className="absolute top-4 left-6 z-20 flex items-center gap-3 text-[10px] font-mono-code text-white/70 tracking-wider">
         <div className="flex items-center gap-2 bg-black/80 backdrop-blur-md px-3.5 py-1.5 border border-white/15 shadow-xl">
-          <span className="w-2 h-2 rounded-full bg-[#3df2ff] animate-pulse"></span>
+          <span className="w-2 h-2 rounded-full bg-sq-accent animate-pulse"></span>
           <span>
             NADIR: {Math.abs(telemetry.lat).toFixed(2)}°{telemetry.lat >= 0 ? 'N' : 'S'} /{' '}
             {Math.abs(telemetry.lon).toFixed(2)}°{telemetry.lon >= 0 ? 'E' : 'W'}
@@ -587,7 +731,7 @@ export const CesiumGlobeViewer: React.FC<CesiumGlobeViewerProps> = ({
         <div className="hidden sm:flex items-center gap-2 bg-black/80 backdrop-blur-md px-3.5 py-1.5 border border-white/15 shadow-xl">
           <span>ALT: {telemetry.altitudeKm.toLocaleString()} KM</span>
         </div>
-        <div className="hidden md:flex items-center gap-2 bg-black/80 backdrop-blur-md px-3.5 py-1.5 border border-white/15 text-[#3df2ff] shadow-xl">
+        <div className="hidden md:flex items-center gap-2 bg-black/80 backdrop-blur-md px-3.5 py-1.5 border border-white/15 text-sq-accent shadow-xl">
           <span>SENSOR: {activeResult?.satellite || 'Sentinel-2 / Landsat-8'}</span>
         </div>
       </div>
@@ -601,7 +745,7 @@ export const CesiumGlobeViewer: React.FC<CesiumGlobeViewerProps> = ({
           className="p-2 bg-black/80 hover:bg-white/15 border border-white/15 text-white/80 hover:text-white transition-all shadow-lg active:scale-95 flex items-center justify-center group"
         >
           <Compass
-            className="w-4 h-4 text-[#3df2ff] transition-transform duration-200"
+            className="w-4 h-4 text-sq-accent transition-transform duration-200"
             style={{ transform: `rotate(${-headingDeg}deg)` }}
           />
         </button>
@@ -612,7 +756,7 @@ export const CesiumGlobeViewer: React.FC<CesiumGlobeViewerProps> = ({
           title={is2DMode ? 'Switch to 3D Globe' : 'Switch to 2D Projection'}
           className={`px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider border transition-all shadow-lg active:scale-95 ${
             is2DMode
-              ? 'bg-[#3df2ff] text-black border-[#3df2ff]'
+              ? 'bg-sq-accent text-black border-sq-accent'
               : 'bg-black/80 hover:bg-white/15 text-white/80 border-white/15'
           }`}
         >
@@ -625,7 +769,7 @@ export const CesiumGlobeViewer: React.FC<CesiumGlobeViewerProps> = ({
           title="Center on Active Region"
           className="p-2 bg-black/80 hover:bg-white/15 border border-white/15 text-white/80 hover:text-white transition-all shadow-lg active:scale-95"
         >
-          <Crosshair className="w-4 h-4 text-[#ff4e00]" />
+          <Crosshair className="w-4 h-4 text-sq-amber" />
         </button>
 
         {/* Zoom In */}
@@ -653,23 +797,42 @@ export const CesiumGlobeViewer: React.FC<CesiumGlobeViewerProps> = ({
         className="w-full h-full cursor-grab active:cursor-grabbing flex items-center justify-center"
       />
 
+      {/* Anchored "what changed" callout for the active region */}
+      {activeResult && activeInsight && (
+        <RegionCallout
+          key={activeResult.id}
+          ref={calloutRef}
+          insight={activeInsight}
+          regionName={`${activeResult.regionName}, ${activeResult.country}`}
+        />
+      )}
+
       {/* Interactive Tooltip when hovering over a site pin */}
       {hoveredSite && (
         <div
-          className="fixed z-40 pointer-events-none bg-black/90 backdrop-blur-md px-3.5 py-2 border border-[#3df2ff]/60 shadow-2xl text-xs select-none"
+          className="fixed z-40 pointer-events-none bg-black/90 backdrop-blur-md px-3.5 py-2 border border-sq-accent/60 shadow-2xl text-xs select-none"
           style={{
             left: `${tooltipPos.x + 18}px`,
             top: `${tooltipPos.y - 35}px`,
           }}
         >
           <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-[#3df2ff] animate-ping"></span>
+            <span className="w-2 h-2 rounded-full bg-sq-accent animate-ping"></span>
             <p className="font-bold text-white font-sans">{hoveredSite.regionName}</p>
           </div>
-          <p className="text-[10px] text-[#ff4e00] font-mono-code font-bold mt-1">
-            {hoveredSite.metric.name.split(' ')[0]}: {hoveredSite.metric.percentageChange > 0 ? '+' : ''}
-            {hoveredSite.metric.percentageChange}% ({hoveredSite.metric.severity})
-          </p>
+          {(() => {
+            const hi = describeRegion(hoveredSite);
+            return (
+              <>
+                <p className="mt-1 text-[11px] font-semibold" style={{ color: TONE_HEX[hi.tone] }}>
+                  {hi.headline} · {hi.deltaText}
+                </p>
+                <p className="mt-0.5 font-mono-code text-[9px] uppercase tracking-wider text-white/50">
+                  {[hi.area, hoveredSite.metric.severity, 'Click to inspect'].filter(Boolean).join(' · ')}
+                </p>
+              </>
+            );
+          })()}
         </div>
       )}
 

@@ -67,16 +67,16 @@ export const VisualEvidencePanel: React.FC<VisualEvidencePanelProps> = ({
   });
 
   return (
-    <div className="bg-[#08080c] border border-white/15 p-4 space-y-3.5 select-none font-mono-code text-xs">
+    <div className="bg-sq-base border border-white/15 p-4 space-y-3.5 select-none font-mono-code text-xs">
       {/* Top Header */}
       <div className="flex items-center justify-between border-b border-white/10 pb-2.5">
         <div className="flex items-center gap-2">
-          <Layers className="w-3.5 h-3.5 text-[#3df2ff]" />
+          <Layers className="w-3.5 h-3.5 text-sq-accent" />
           <span className="text-[10px] font-bold uppercase tracking-wider text-white">
             Visual Evidence & Sensors
           </span>
         </div>
-        <span className="text-[9px] text-[#3df2ff] font-bold">
+        <span className="text-[9px] text-sq-accent font-bold">
           {Math.round(confidence * 100)}% Confidence
         </span>
       </div>
@@ -95,7 +95,7 @@ export const VisualEvidencePanel: React.FC<VisualEvidencePanelProps> = ({
             onClick={() => setActiveThumbnailLayer('OPTICAL')}
             className={`px-1.5 py-0.5 uppercase ${
               activeThumbnailLayer === 'OPTICAL'
-                ? 'bg-[#3df2ff] text-black font-bold'
+                ? 'bg-sq-accent text-black font-bold'
                 : 'text-white/60 hover:text-white'
             }`}
           >
@@ -105,7 +105,7 @@ export const VisualEvidencePanel: React.FC<VisualEvidencePanelProps> = ({
             onClick={() => setActiveThumbnailLayer('SAR')}
             className={`px-1.5 py-0.5 uppercase ${
               activeThumbnailLayer === 'SAR'
-                ? 'bg-[#0284c7] text-white font-bold'
+                ? 'bg-sq-water text-white font-bold'
                 : 'text-white/60 hover:text-white'
             }`}
           >
@@ -115,7 +115,7 @@ export const VisualEvidencePanel: React.FC<VisualEvidencePanelProps> = ({
             onClick={() => setActiveThumbnailLayer('DIFF')}
             className={`px-1.5 py-0.5 uppercase ${
               activeThumbnailLayer === 'DIFF'
-                ? 'bg-[#ff4e00] text-black font-bold'
+                ? 'bg-sq-amber text-black font-bold'
                 : 'text-white/60 hover:text-white'
             }`}
           >
@@ -130,7 +130,7 @@ export const VisualEvidencePanel: React.FC<VisualEvidencePanelProps> = ({
           </span>
           <button
             onClick={onOpenTemporalComparison}
-            className="bg-[#ff4e00] hover:bg-[#ff4e00]/90 text-black px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider border border-[#ff4e00] pointer-events-auto flex items-center gap-1 shadow"
+            className="bg-sq-amber hover:bg-sq-amber/90 text-black px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider border border-sq-amber pointer-events-auto flex items-center gap-1 shadow"
           >
             <SlidersHorizontal className="w-2.5 h-2.5" />
             <span>Interactive Split</span>
@@ -150,7 +150,7 @@ export const VisualEvidencePanel: React.FC<VisualEvidencePanelProps> = ({
                 key={idx}
                 className="flex items-center gap-2 p-1.5 bg-white/5 border border-white/10 text-white/80"
               >
-                <div className="w-1.5 h-1.5 rounded-full bg-[#3df2ff]"></div>
+                <div className="w-1.5 h-1.5 rounded-full bg-sq-accent"></div>
                 <span>{driver}</span>
               </div>
             ))}
@@ -164,14 +164,14 @@ export const VisualEvidencePanel: React.FC<VisualEvidencePanelProps> = ({
           onClick={onOpenMultimodalViewer}
           className="p-2 bg-white/5 hover:bg-white/10 border border-white/15 text-white/90 hover:text-white flex items-center justify-center gap-1.5 font-bold uppercase transition-colors"
         >
-          <Zap className="w-3 h-3 text-[#3df2ff]" />
+          <Zap className="w-3 h-3 text-sq-accent" />
           <span>Multimodal SAR</span>
         </button>
         <button
           onClick={onOpenSpectralModal}
           className="p-2 bg-white/5 hover:bg-white/10 border border-white/15 text-white/90 hover:text-white flex items-center justify-center gap-1.5 font-bold uppercase transition-colors"
         >
-          <ExternalLink className="w-3 h-3 text-[#ff4e00]" />
+          <ExternalLink className="w-3 h-3 text-sq-amber" />
           <span>Spectral Bands</span>
         </button>
       </div>

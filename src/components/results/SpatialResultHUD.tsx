@@ -56,6 +56,7 @@ export const SpatialResultHUD: React.FC<SpatialResultHUDProps> = ({
     siteCode,
     location,
     agentTrace,
+    visionAnalysis,
   } = activeResult;
 
   const isPositive = metric.percentageChange > 0;
@@ -130,9 +131,9 @@ export const SpatialResultHUD: React.FC<SpatialResultHUDProps> = ({
           <span
             className={`text-[8px] font-mono-code px-1.5 py-0.5 uppercase font-bold tracking-wider border ${
               metric.severity === 'CRITICAL'
-                ? 'bg-[#ff4e00]/20 text-[#ff4e00] border-[#ff4e00]/50'
+                ? 'bg-sq-critical/20 text-sq-critical border-sq-critical/50'
                 : metric.severity === 'HIGH'
-                ? 'bg-[#f59e0b]/20 text-[#f59e0b] border-[#f59e0b]/50'
+                ? 'bg-sq-warning/20 text-sq-warning border-sq-warning/50'
                 : 'bg-white/10 text-white/80 border-white/20'
             }`}
           >
@@ -153,7 +154,7 @@ export const SpatialResultHUD: React.FC<SpatialResultHUDProps> = ({
       {/* Region Title, Category & Coordinates */}
       <div className="space-y-1 mb-3">
         <div className="flex items-center justify-between">
-          <span className="text-[9px] font-mono-code text-[#3df2ff] font-bold uppercase tracking-wider">
+          <span className="text-[9px] font-mono-code text-sq-accent font-bold uppercase tracking-wider">
             {category.replace(/_/g, ' ')}
           </span>
           <span className="text-[9px] font-mono-code text-white/40">
@@ -168,6 +169,27 @@ export const SpatialResultHUD: React.FC<SpatialResultHUDProps> = ({
         </p>
       </div>
 
+      {/* AI vision answer (uploaded-image analysis only) */}
+      {visionAnalysis && (
+        <div className="mb-3 border border-sq-amber/30 bg-sq-amber/5 p-3">
+          <p className="mb-1 flex items-center gap-1.5 text-[9px] font-mono-code font-bold uppercase tracking-widest text-sq-amber">
+            <Bot className="h-3 w-3" />
+            Answer
+          </p>
+          <p className="text-xs leading-relaxed text-white/90 line-clamp-5">{visionAnalysis.answer}</p>
+          {visionAnalysis.insights.length > 0 && (
+            <ul className="mt-2 space-y-1 border-t border-white/10 pt-2">
+              {visionAnalysis.insights.slice(0, 3).map((insight) => (
+                <li key={insight} className="flex gap-1.5 text-[10px] leading-snug text-white/70">
+                  <span className="mt-1.5 h-1 w-1 shrink-0 bg-sq-amber" />
+                  {insight}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+
       {/* Big Metric Delta & Baseline */}
       <div className="bg-white/5 border border-white/10 p-3 mb-3">
         <div className="flex items-baseline justify-between">
@@ -178,7 +200,7 @@ export const SpatialResultHUD: React.FC<SpatialResultHUDProps> = ({
             <div className="flex items-baseline gap-1 mt-0.5">
               <span
                 className={`text-3xl sm:text-4xl font-black font-mono-code tracking-tighter ${
-                  isPositive ? 'text-[#22c55e]' : 'text-[#ff4e00]'
+                  isPositive ? 'text-sq-positive' : 'text-sq-critical'
                 }`}
               >
                 {isPositive ? '+' : ''}
@@ -192,7 +214,7 @@ export const SpatialResultHUD: React.FC<SpatialResultHUDProps> = ({
             <p className="text-sm font-mono-code font-bold text-white mt-0.5">
               {metric.beforeValue.toFixed(2)}{' '}
               <span className="text-white/40 font-normal">→</span>{' '}
-              <span className={isPositive ? 'text-[#22c55e]' : 'text-[#ff4e00]'}>
+              <span className={isPositive ? 'text-sq-positive' : 'text-sq-critical'}>
                 {metric.afterValue.toFixed(2)}
               </span>
             </p>
@@ -209,20 +231,20 @@ export const SpatialResultHUD: React.FC<SpatialResultHUDProps> = ({
           <svg viewBox="0 0 200 42" className="w-full h-9 overflow-visible">
             <defs>
               <linearGradient id="metricGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#ff4e00" stopOpacity="0.4" />
-                <stop offset="100%" stopColor="#ff4e00" stopOpacity="0.0" />
+                <stop offset="0%" stopColor="#B85C4A" stopOpacity="0.4" />
+                <stop offset="100%" stopColor="#B85C4A" stopOpacity="0.0" />
               </linearGradient>
             </defs>
-            <line x1="0" y1="20" x2="200" y2="20" stroke="rgba(255,255,255,0.08)" strokeDasharray="2,2" />
-            <path d={pathD} fill="none" stroke="#ff4e00" strokeWidth="2" strokeLinecap="round" />
+            <line x1="0" y1="20" x2="200" y2="20" stroke="rgba(230,226,214,0.08)" strokeDasharray="2,2" />
+            <path d={pathD} fill="none" stroke="#B85C4A" strokeWidth="2" strokeLinecap="round" />
             {sparkPoints.map((pt, i) => (
               <circle
                 key={i}
                 cx={10 + i * 36}
                 cy={getSvgY(pt.val)}
                 r="2.5"
-                fill="#ffffff"
-                stroke="#ff4e00"
+                fill="#E6E2D6"
+                stroke="#B85C4A"
                 strokeWidth="1.5"
               />
             ))}
@@ -244,7 +266,7 @@ export const SpatialResultHUD: React.FC<SpatialResultHUDProps> = ({
         </div>
         <div className="flex justify-between">
           <span className="text-white/40 uppercase">Model Confidence</span>
-          <span className="text-[#3df2ff] font-bold">{Math.round(confidence * 100)}%</span>
+          <span className="text-sq-accent font-bold">{Math.round(confidence * 100)}%</span>
         </div>
         <div className="flex justify-between">
           <span className="text-white/40 uppercase">Land Cover</span>
@@ -252,7 +274,7 @@ export const SpatialResultHUD: React.FC<SpatialResultHUDProps> = ({
         </div>
         <div className="flex justify-between">
           <span className="text-white/40 uppercase">Primary Driver</span>
-          <span className="text-[#ff4e00] font-bold">{primaryDrivers[0]}</span>
+          <span className="text-sq-amber font-bold">{primaryDrivers[0]}</span>
         </div>
       </div>
 
@@ -260,7 +282,7 @@ export const SpatialResultHUD: React.FC<SpatialResultHUDProps> = ({
       {agentTrace && (
         <div className="mb-3 p-2 bg-white/5 border border-white/10 font-mono-code text-[9px]">
           <div className="flex items-center justify-between text-white/50 mb-1">
-            <span className="flex items-center gap-1 text-[#3df2ff]">
+            <span className="flex items-center gap-1 text-sq-accent">
               <Bot className="w-2.5 h-2.5" />
               <span>AGENT TRACE</span>
             </span>
@@ -276,15 +298,15 @@ export const SpatialResultHUD: React.FC<SpatialResultHUDProps> = ({
       <div className="grid grid-cols-2 gap-2 pt-1">
         <button
           onClick={onOpenEvidence}
-          className="py-2 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-mono-code text-[11px] font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 active:scale-95"
+          className="py-2 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-sans text-[11px] font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 active:scale-95"
         >
           <span>Evidence</span>
-          <ExternalLink className="w-3 h-3 text-[#3df2ff]" />
+          <ExternalLink className="w-3 h-3 text-sq-accent" />
         </button>
 
         <button
           onClick={onOpenTemporalComparison || onOpenEvidence}
-          className="py-2 bg-[#ff4e00] hover:bg-[#ff4e00]/90 text-black font-mono-code text-[11px] font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 active:scale-95 shadow-[0_0_15px_rgba(255,78,0,0.4)]"
+          className="py-2 bg-sq-amber hover:bg-sq-amber/90 text-black font-sans text-[11px] font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 active:scale-95 shadow-[0_0_15px_rgba(211,166,74,0.4)]"
         >
           <span>Split Diff</span>
           <Satellite className="w-3 h-3" />

@@ -41,9 +41,9 @@ export const FloatingQueryBar: React.FC<FloatingQueryBarProps> = ({
       {/* Floating Query Command Bar */}
       <form
         onSubmit={handleSubmit}
-        className="w-full bg-black/85 backdrop-blur-xl border border-white/20 hover:border-[#3df2ff]/50 focus-within:border-[#3df2ff] p-2 sm:p-2.5 shadow-2xl transition-all flex items-center gap-3 relative group"
+        className="w-full bg-black/85 backdrop-blur-xl border border-white/20 hover:border-sq-accent/50 focus-within:border-sq-accent p-2 sm:p-2.5 shadow-2xl transition-all flex items-center gap-3 relative group"
       >
-        <div className="pl-2 flex items-center gap-2 text-white/50 group-focus-within:text-[#3df2ff] transition-colors">
+        <div className="pl-2 flex items-center gap-2 text-white/50 group-focus-within:text-sq-accent transition-colors">
           <Search className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
         </div>
 
@@ -60,10 +60,10 @@ export const FloatingQueryBar: React.FC<FloatingQueryBarProps> = ({
         <button
           type="submit"
           disabled={isProcessing || !inputValue.trim()}
-          className={`px-4 sm:px-5 py-2 sm:py-2.5 font-mono-code text-xs sm:text-sm font-bold uppercase tracking-wider transition-all flex items-center gap-2 active:scale-95 shrink-0 ${
+          className={`px-4 sm:px-5 py-2 sm:py-2.5 font-sans text-xs sm:text-sm font-bold uppercase tracking-wider transition-all flex items-center gap-2 active:scale-95 shrink-0 ${
             isProcessing
               ? 'bg-white/10 text-white/40 cursor-wait'
-              : 'bg-[#3df2ff] text-black hover:bg-white shadow-[0_0_20px_rgba(61,242,255,0.4)]'
+              : 'bg-sq-accent text-black hover:bg-white shadow-[0_0_20px_rgba(166,184,106,0.4)]'
           }`}
         >
           <span>{isProcessing ? 'Analyzing...' : 'Investigate'}</span>
@@ -81,7 +81,7 @@ export const FloatingQueryBar: React.FC<FloatingQueryBarProps> = ({
             key={idx}
             type="button"
             onClick={() => handleSelectSuggestion(sug)}
-            className="text-[10px] sm:text-[11px] font-mono-code px-2.5 py-1 bg-black/60 hover:bg-white/15 border border-white/10 text-white/70 hover:text-white transition-all backdrop-blur-md rounded-none active:scale-95"
+            className="text-[10px] sm:text-[11px] font-sans px-2.5 py-1 bg-black/60 hover:bg-white/15 border border-white/10 text-white/70 hover:text-white transition-all backdrop-blur-md rounded-none active:scale-95"
           >
             {sug}
           </button>

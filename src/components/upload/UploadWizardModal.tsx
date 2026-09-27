@@ -8,7 +8,7 @@
  * orchestrated AI analysis.
  */
 
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   UploadCloud,
   X,
@@ -27,6 +27,8 @@ import {
   Compass,
   ArrowRight,
   Database,
+  RefreshCw,
+  Trash2,
 } from 'lucide-react';
 import {
   InputMode,
@@ -43,18 +45,131 @@ interface UploadWizardModalProps {
   isOpen: boolean;
   onClose: () => void;
   onLaunchAnalysis: (input: AnalysisInput, prompt: string) => void;
+  /** A file dropped onto the console before the wizard opened; loaded into the first slot. */
+  initialFile?: File | null;
+  onInitialFileConsumed?: () => void;
 }
+
+const ACCEPTED_FILES = 'image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp,.tif,.tiff,.nc';
+
+function isSupportedFile(file: File) {
+  return file.type.startsWith('image/') || /\.(tiff?|nc|png|jpe?g|webp)$/i.test(file.name);
+}
+
+const DEFAULT_PROMPTS: Record<InputMode, string> = {
+  SINGLE_IMAGE: 'Describe this area and anything notable, such as vegetation, water or built-up land.',
+  BI_TEMPORAL: 'What changed between these two dates?',
+  OPTICAL_SAR: 'Identify built-up and water-covered regions using both optical and SAR.',
+};
+
+/** Click / drag-and-drop / keyboard file target for one upload slot. */
+const Dropzone: React.FC<{
+  title: string;
+  tone: 'accent' | 'amber';
+  busy: boolean;
+  onFile: (file: File) => void;
+}> = ({ title, tone, busy, onFile }) => {
+  const [isOver, setIsOver] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const toneText = tone === 'amber' ? 'text-sq-amber' : 'text-sq-accent';
+  const toneActive = tone === 'amber' ? 'border-sq-amber bg-sq-amber/10' : 'border-sq-accent bg-sq-accent/10';
+
+  return (
+    <div
+      role="button"
+      tabIndex={0}
+      aria-label={`${title}: click to browse or drop an image file`}
+      onClick={() => inputRef.current?.click()}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          inputRef.current?.click();
+        }
+      }}
+      onDragOver={(e) => {
+        e.preventDefault();
+        setIsOver(true);
+      }}
+      onDragLeave={() => setIsOver(false)}
+      onDrop={(e) => {
+        e.preventDefault();
+        setIsOver(false);
+        const file = e.dataTransfer.files?.[0];
+        if (file) onFile(file);
+      }}
+      className={`border-2 border-dashed p-6 flex flex-col items-center justify-center text-center cursor-pointer transition-colors focus-visible:outline focus-visible:outline-1 focus-visible:outline-sq-accent ${
+        isOver ? toneActive : 'border-white/20 hover:bg-white/5 hover:border-white/35'
+      }`}
+    >
+      <UploadCloud className={`w-8 h-8 mb-2 ${toneText}`} />
+      <span className="text-xs text-white font-bold mb-1">{busy ? 'Reading image…' : title}</span>
+      <span className="text-[10px] text-white/55">Drop a file here, click to browse, or paste with Ctrl+V</span>
+      <span className="mt-1 text-[10px] text-white/35">PNG, JPEG or WebP work best for AI analysis</span>
+      <input
+        ref={inputRef}
+        type="file"
+        accept={ACCEPTED_FILES}
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) onFile(file);
+          e.target.value = '';
+        }}
+      />
+    </div>
+  );
+};
+
+/** Replace / Remove controls shown under a loaded image. */
+const SlotActions: React.FC<{ onFile: (file: File) => void; onRemove: () => void }> = ({ onFile, onRemove }) => {
+  const inputRef = useRef<HTMLInputElement>(null);
+  return (
+    <div className="flex items-center gap-1.5 pt-1">
+      <button
+        type="button"
+        onClick={() => inputRef.current?.click()}
+        className="flex items-center gap-1 px-2 py-1 bg-white/5 hover:bg-white/15 text-white/80 border border-white/10 text-[10px] font-sans font-semibold uppercase"
+      >
+        <RefreshCw className="w-3 h-3" />
+        Replace
+      </button>
+      <button
+        type="button"
+        onClick={onRemove}
+        className="flex items-center gap-1 px-2 py-1 bg-white/5 hover:bg-sq-critical/20 text-white/70 hover:text-sq-critical border border-white/10 text-[10px] font-sans font-semibold uppercase"
+      >
+        <Trash2 className="w-3 h-3" />
+        Remove
+      </button>
+      <input
+        ref={inputRef}
+        type="file"
+        accept={ACCEPTED_FILES}
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) onFile(file);
+          e.target.value = '';
+        }}
+      />
+    </div>
+  );
+};
 
 export const UploadWizardModal: React.FC<UploadWizardModalProps> = ({
   isOpen,
   onClose,
   onLaunchAnalysis,
+  initialFile,
+  onInitialFileConsumed,
 }) => {
-  const [mode, setMode] = useState<InputMode>('BI_TEMPORAL');
+  const [mode, setMode] = useState<InputMode>('SINGLE_IMAGE');
   const [primaryImage, setPrimaryImage] = useState<UploadedImage | null>(null);
   const [secondaryImage, setSecondaryImage] = useState<UploadedImage | null>(null);
-  const [userPrompt, setUserPrompt] = useState('What changed between these two dates?');
+  const [userPrompt, setUserPrompt] = useState(DEFAULT_PROMPTS.SINGLE_IMAGE);
+  const [promptEdited, setPromptEdited] = useState(false);
   const [isInspecting, setIsInspecting] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
   const [manualLocation, setManualLocation] = useState<{
     name: string;
@@ -63,32 +178,12 @@ export const UploadWizardModal: React.FC<UploadWizardModalProps> = ({
     lon: number;
   } | null>(null);
 
-  // Initialize with high-quality default benchmark imagery based on mode
-  React.useEffect(() => {
-    if (isOpen && !primaryImage) {
-      loadBenchmarkPreset(mode, 3);
+  const loadFile = async (file: File, slot: 'primary' | 'secondary') => {
+    if (!isSupportedFile(file)) {
+      setUploadError(`${file.name} isn't an image file. Choose a PNG, JPEG, WebP or GeoTIFF image.`);
+      return;
     }
-  }, [isOpen, mode]);
-
-  if (!isOpen) return null;
-
-  // Validation report computed dynamically
-  const validationReport: ValidationReport = primaryImage
-    ? ImageInspector.validateInputPair(mode, primaryImage, secondaryImage || undefined)
-    : {
-        overallStatus: 'NOT_COMPATIBLE',
-        canExecuteAnalysis: false,
-        summary: 'Awaiting image upload to validate format and compatibility.',
-        checks: [],
-      };
-
-  const handleFileUpload = async (
-    e: React.ChangeEvent<HTMLInputElement>,
-    slot: 'primary' | 'secondary'
-  ) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
+    setUploadError(null);
     setIsInspecting(true);
     try {
       const defaultModality: ModalityType =
@@ -110,13 +205,65 @@ export const UploadWizardModal: React.FC<UploadWizardModalProps> = ({
       } else {
         setSecondaryImage(inspected);
       }
+    } catch (err) {
+      setUploadError(`${file.name} couldn't be opened. Try exporting it as PNG or JPEG.`);
     } finally {
       setIsInspecting(false);
     }
   };
 
+  const removeImage = (slot: 'primary' | 'secondary') => {
+    const img = slot === 'primary' ? primaryImage : secondaryImage;
+    if (img?.source === 'USER_UPLOAD') URL.revokeObjectURL(img.previewUrl);
+    if (slot === 'primary') setPrimaryImage(null);
+    else setSecondaryImage(null);
+  };
+
+  const switchMode = (next: InputMode) => {
+    setMode(next);
+    if (next === 'SINGLE_IMAGE') setSecondaryImage(null);
+    if (!promptEdited) setUserPrompt(DEFAULT_PROMPTS[next]);
+  };
+
+  // A file dropped onto the console opens the wizard with it already loaded.
+  useEffect(() => {
+    if (!isOpen || !initialFile) return;
+    switchMode('SINGLE_IMAGE');
+    loadFile(initialFile, 'primary');
+    onInitialFileConsumed?.();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, initialFile]);
+
+  // Paste an image from the clipboard into the next empty slot.
+  useEffect(() => {
+    if (!isOpen) return;
+    const onPaste = (e: ClipboardEvent) => {
+      const file = Array.from(e.clipboardData?.files ?? []).find((f) => f.type.startsWith('image/'));
+      if (!file) return;
+      e.preventDefault();
+      loadFile(file, mode !== 'SINGLE_IMAGE' && primaryImage && !secondaryImage ? 'secondary' : 'primary');
+    };
+    window.addEventListener('paste', onPaste);
+    return () => window.removeEventListener('paste', onPaste);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, mode, primaryImage, secondaryImage]);
+
+  if (!isOpen) return null;
+
+  // Validation report computed dynamically
+  const validationReport: ValidationReport = primaryImage
+    ? ImageInspector.validateInputPair(mode, primaryImage, secondaryImage || undefined)
+    : {
+        overallStatus: 'NOT_COMPATIBLE',
+        canExecuteAnalysis: false,
+        summary: 'Awaiting image upload to validate format and compatibility.',
+        checks: [],
+      };
+
   const loadBenchmarkPreset = (targetMode: InputMode, scenarioIndex: number) => {
     setMode(targetMode);
+    setPromptEdited(false);
+    setUploadError(null);
 
     if (scenarioIndex === 1) {
       // Scenario 1: Single Optical Image — Land-Cover Classification
@@ -305,19 +452,19 @@ export const UploadWizardModal: React.FC<UploadWizardModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/85 backdrop-blur-md animate-in fade-in select-none">
-      <div className="relative w-full max-w-3xl max-h-[90vh] flex flex-col bg-[#0b0c10] border border-white/20 shadow-[0_0_80px_rgba(0,0,0,0.95)]">
+      <div className="relative w-full max-w-3xl max-h-[90vh] flex flex-col bg-sq-surface border border-white/20 shadow-[0_0_80px_rgba(17,18,15,0.95)]">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 bg-white/[0.02]">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-[#3df2ff]/10 border border-[#3df2ff]/30 text-[#3df2ff]">
+            <div className="p-2 bg-sq-accent/10 border border-sq-accent/30 text-sq-accent">
               <UploadCloud className="w-5 h-5" />
             </div>
             <div>
               <h2 className="text-base font-bold text-white uppercase tracking-wider font-mono-code flex items-center gap-2">
-                <span>Satellite Image Ingestion & Workflow Routing</span>
+                <span>Upload & Analyze Imagery</span>
               </h2>
               <p className="text-[11px] text-white/50 font-mono-code">
-                Upload raw GeoTIFF, COG, or raster pairs for agentic remote-sensing intelligence
+                Upload a satellite or aerial image (or a pair) and ask a question about the area
               </p>
             </div>
           </div>
@@ -340,23 +487,20 @@ export const UploadWizardModal: React.FC<UploadWizardModalProps> = ({
               {/* Single Image Card */}
               <button
                 type="button"
-                onClick={() => {
-                  setMode('SINGLE_IMAGE');
-                  loadBenchmarkPreset('SINGLE_IMAGE', 1);
-                }}
+                onClick={() => switchMode('SINGLE_IMAGE')}
                 className={`p-3.5 text-left border transition-all ${
                   mode === 'SINGLE_IMAGE'
-                    ? 'border-[#10b981] bg-[#10b981]/10 shadow-[0_0_20px_rgba(16,185,129,0.15)]'
+                    ? 'border-sq-positive bg-sq-positive/10 shadow-[0_0_20px_rgba(16,185,129,0.15)]'
                     : 'border-white/10 bg-white/5 hover:border-white/20'
                 }`}
               >
                 <div className="flex items-center justify-between mb-1.5">
-                  <div className="flex items-center gap-1.5 text-[#10b981] font-bold text-xs uppercase">
+                  <div className="flex items-center gap-1.5 text-sq-positive font-bold text-xs uppercase">
                     <Eye className="w-3.5 h-3.5" />
                     <span>Single Scene</span>
                   </div>
                   {mode === 'SINGLE_IMAGE' && (
-                    <span className="w-2 h-2 rounded-full bg-[#10b981]" />
+                    <span className="w-2 h-2 rounded-full bg-sq-positive" />
                   )}
                 </div>
                 <p className="text-[10px] text-white/70 leading-relaxed">
@@ -367,23 +511,20 @@ export const UploadWizardModal: React.FC<UploadWizardModalProps> = ({
               {/* Temporal Comparison Card */}
               <button
                 type="button"
-                onClick={() => {
-                  setMode('BI_TEMPORAL');
-                  loadBenchmarkPreset('BI_TEMPORAL', 3);
-                }}
+                onClick={() => switchMode('BI_TEMPORAL')}
                 className={`p-3.5 text-left border transition-all ${
                   mode === 'BI_TEMPORAL'
-                    ? 'border-[#ff4e00] bg-[#ff4e00]/10 shadow-[0_0_20px_rgba(255,78,0,0.15)]'
+                    ? 'border-sq-amber bg-sq-amber/10 shadow-[0_0_20px_rgba(211,166,74,0.15)]'
                     : 'border-white/10 bg-white/5 hover:border-white/20'
                 }`}
               >
                 <div className="flex items-center justify-between mb-1.5">
-                  <div className="flex items-center gap-1.5 text-[#ff4e00] font-bold text-xs uppercase">
+                  <div className="flex items-center gap-1.5 text-sq-amber font-bold text-xs uppercase">
                     <Layers className="w-3.5 h-3.5" />
                     <span>Temporal Comparison</span>
                   </div>
                   {mode === 'BI_TEMPORAL' && (
-                    <span className="w-2 h-2 rounded-full bg-[#ff4e00]" />
+                    <span className="w-2 h-2 rounded-full bg-sq-amber" />
                   )}
                 </div>
                 <p className="text-[10px] text-white/70 leading-relaxed">
@@ -394,23 +535,20 @@ export const UploadWizardModal: React.FC<UploadWizardModalProps> = ({
               {/* Multimodal Card */}
               <button
                 type="button"
-                onClick={() => {
-                  setMode('OPTICAL_SAR');
-                  loadBenchmarkPreset('OPTICAL_SAR', 5);
-                }}
+                onClick={() => switchMode('OPTICAL_SAR')}
                 className={`p-3.5 text-left border transition-all ${
                   mode === 'OPTICAL_SAR'
-                    ? 'border-[#3df2ff] bg-[#3df2ff]/10 shadow-[0_0_20px_rgba(61,242,255,0.15)]'
+                    ? 'border-sq-accent bg-sq-accent/10 shadow-[0_0_20px_rgba(166,184,106,0.15)]'
                     : 'border-white/10 bg-white/5 hover:border-white/20'
                 }`}
               >
                 <div className="flex items-center justify-between mb-1.5">
-                  <div className="flex items-center gap-1.5 text-[#3df2ff] font-bold text-xs uppercase">
+                  <div className="flex items-center gap-1.5 text-sq-accent font-bold text-xs uppercase">
                     <Radio className="w-3.5 h-3.5" />
                     <span>Optical + SAR</span>
                   </div>
                   {mode === 'OPTICAL_SAR' && (
-                    <span className="w-2 h-2 rounded-full bg-[#3df2ff]" />
+                    <span className="w-2 h-2 rounded-full bg-sq-accent" />
                   )}
                 </div>
                 <p className="text-[10px] text-white/70 leading-relaxed">
@@ -420,60 +558,17 @@ export const UploadWizardModal: React.FC<UploadWizardModalProps> = ({
             </div>
           </div>
 
-          {/* Quick Demo Scenarios Bar */}
-          <div className="p-3 bg-white/[0.03] border border-white/10 flex flex-wrap items-center gap-2">
-            <span className="text-[10px] text-white/50 uppercase font-bold flex items-center gap-1">
-              <Database className="w-3 h-3 text-[#3df2ff]" />
-              Quick Presets:
-            </span>
-            <button
-              type="button"
-              onClick={() => loadBenchmarkPreset('SINGLE_IMAGE', 1)}
-              className="px-2 py-1 bg-white/5 hover:bg-white/15 text-white/80 border border-white/10 text-[10px]"
-            >
-              1. Land-Cover Scene
-            </button>
-            <button
-              type="button"
-              onClick={() => loadBenchmarkPreset('SINGLE_IMAGE', 2)}
-              className="px-2 py-1 bg-white/5 hover:bg-white/15 text-white/80 border border-white/10 text-[10px]"
-            >
-              2. Water Grounding
-            </button>
-            <button
-              type="button"
-              onClick={() => loadBenchmarkPreset('BI_TEMPORAL', 3)}
-              className="px-2 py-1 bg-white/5 hover:bg-white/15 text-white/80 border border-white/10 text-[10px]"
-            >
-              3. Urban Expansion
-            </button>
-            <button
-              type="button"
-              onClick={() => loadBenchmarkPreset('BI_TEMPORAL', 4)}
-              className="px-2 py-1 bg-white/5 hover:bg-white/15 text-white/80 border border-white/10 text-[10px]"
-            >
-              4. Canopy Loss
-            </button>
-            <button
-              type="button"
-              onClick={() => loadBenchmarkPreset('OPTICAL_SAR', 5)}
-              className="px-2 py-1 bg-white/5 hover:bg-white/15 text-white/80 border border-white/10 text-[10px]"
-            >
-              5. Optical+SAR Fusion
-            </button>
-          </div>
-
           {/* Step 2: Upload Dropzones & Inspection Cards */}
           <div>
             <div className="text-[10px] text-white/50 uppercase tracking-wider font-bold mb-2">
-              Step 2 — Input Raster Inspection & Upload Slots
+              Step 2 — Upload your image{mode === 'SINGLE_IMAGE' ? '' : 's'}
             </div>
 
             <div className={`grid ${mode === 'SINGLE_IMAGE' ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-2'} gap-4`}>
               {/* Primary Slot */}
               <div className="border border-white/15 bg-white/[0.02] p-4 space-y-3">
                 <div className="flex items-center justify-between text-xs font-bold text-white border-b border-white/10 pb-2">
-                  <span className="flex items-center gap-1.5 text-[#3df2ff]">
+                  <span className="flex items-center gap-1.5 text-sq-accent">
                     <Satellite className="w-3.5 h-3.5" />
                     {mode === 'BI_TEMPORAL' ? 'Baseline Epoch (T0)' : mode === 'OPTICAL_SAR' ? 'Optical Imagery Layer' : 'Primary Observation Scene'}
                   </span>
@@ -520,20 +615,21 @@ export const UploadWizardModal: React.FC<UploadWizardModalProps> = ({
                           <option value="SAR">SAR Radar (C-Band / L-Band)</option>
                         </select>
                       </div>
+                      {primaryImage.format === 'GEOTIFF' && primaryImage.source === 'USER_UPLOAD' && (
+                        <p className="text-[10px] text-white/50">
+                          Tip: GeoTIFF files can't be displayed in the browser. Export as PNG or JPEG for the most detailed results.
+                        </p>
+                      )}
+                      <SlotActions onFile={(file) => loadFile(file, 'primary')} onRemove={() => removeImage('primary')} />
                     </div>
                   </div>
                 ) : (
-                  <label className="border-2 border-dashed border-white/20 p-6 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-white/5 transition-colors">
-                    <UploadCloud className="w-8 h-8 text-[#3df2ff] mb-2" />
-                    <span className="text-xs text-white font-bold mb-1">Upload Primary Raster</span>
-                    <span className="text-[10px] text-white/40">Supports GeoTIFF, COG, NetCDF, PNG</span>
-                    <input
-                      type="file"
-                      accept=".tif,.tiff,.nc,.png,.jpg,.jpeg"
-                      onChange={(e) => handleFileUpload(e, 'primary')}
-                      className="hidden"
-                    />
-                  </label>
+                  <Dropzone
+                    title={mode === 'BI_TEMPORAL' ? 'Upload the earlier image' : mode === 'OPTICAL_SAR' ? 'Upload the optical image' : 'Upload an image'}
+                    tone="accent"
+                    busy={isInspecting}
+                    onFile={(file) => loadFile(file, 'primary')}
+                  />
                 )}
               </div>
 
@@ -541,7 +637,7 @@ export const UploadWizardModal: React.FC<UploadWizardModalProps> = ({
               {mode !== 'SINGLE_IMAGE' && (
                 <div className="border border-white/15 bg-white/[0.02] p-4 space-y-3">
                   <div className="flex items-center justify-between text-xs font-bold text-white border-b border-white/10 pb-2">
-                    <span className="flex items-center gap-1.5 text-[#ff4e00]">
+                    <span className="flex items-center gap-1.5 text-sq-amber">
                       <Layers className="w-3.5 h-3.5" />
                       {mode === 'BI_TEMPORAL' ? 'Target Epoch (T1)' : 'SAR Radar Layer (Sentinel-1)'}
                     </span>
@@ -588,26 +684,69 @@ export const UploadWizardModal: React.FC<UploadWizardModalProps> = ({
                             <option value="SAR">SAR Radar (C-Band / L-Band)</option>
                           </select>
                         </div>
+                        <SlotActions onFile={(file) => loadFile(file, 'secondary')} onRemove={() => removeImage('secondary')} />
                       </div>
                     </div>
                   ) : (
-                    <label className="border-2 border-dashed border-white/20 p-6 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-white/5 transition-colors">
-                      <UploadCloud className="w-8 h-8 text-[#ff4e00] mb-2" />
-                      <span className="text-xs text-white font-bold mb-1">
-                        Upload {mode === 'BI_TEMPORAL' ? 'Target T1 Raster' : 'SAR Radar Scene'}
-                      </span>
-                      <span className="text-[10px] text-white/40">Supports GeoTIFF, COG, SAFE</span>
-                      <input
-                        type="file"
-                        accept=".tif,.tiff,.nc,.png,.jpg,.jpeg"
-                        onChange={(e) => handleFileUpload(e, 'secondary')}
-                        className="hidden"
-                      />
-                    </label>
+                    <Dropzone
+                      title={mode === 'BI_TEMPORAL' ? 'Upload the later image' : 'Upload the SAR image'}
+                      tone="amber"
+                      busy={isInspecting}
+                      onFile={(file) => loadFile(file, 'secondary')}
+                    />
                   )}
                 </div>
               )}
             </div>
+
+            {uploadError && (
+              <p role="status" className="mt-3 border border-white/15 bg-white/[0.03] px-3 py-2 text-[11px] text-white/70">
+                {uploadError}
+              </p>
+            )}
+
+            {/* Optional sample imagery */}
+          <div className="mt-3 p-3 bg-white/[0.03] border border-white/10 flex flex-wrap items-center gap-2">
+            <span className="text-[10px] text-white/50 uppercase font-bold flex items-center gap-1">
+              <Database className="w-3 h-3 text-sq-accent" />
+              No image handy? Try a sample:
+            </span>
+            <button
+              type="button"
+              onClick={() => loadBenchmarkPreset('SINGLE_IMAGE', 1)}
+              className="px-2 py-1 bg-white/5 hover:bg-white/15 text-white/80 border border-white/10 text-[10px]"
+            >
+              1. Land-Cover Scene
+            </button>
+            <button
+              type="button"
+              onClick={() => loadBenchmarkPreset('SINGLE_IMAGE', 2)}
+              className="px-2 py-1 bg-white/5 hover:bg-white/15 text-white/80 border border-white/10 text-[10px]"
+            >
+              2. Water Grounding
+            </button>
+            <button
+              type="button"
+              onClick={() => loadBenchmarkPreset('BI_TEMPORAL', 3)}
+              className="px-2 py-1 bg-white/5 hover:bg-white/15 text-white/80 border border-white/10 text-[10px]"
+            >
+              3. Urban Expansion
+            </button>
+            <button
+              type="button"
+              onClick={() => loadBenchmarkPreset('BI_TEMPORAL', 4)}
+              className="px-2 py-1 bg-white/5 hover:bg-white/15 text-white/80 border border-white/10 text-[10px]"
+            >
+              4. Canopy Loss
+            </button>
+            <button
+              type="button"
+              onClick={() => loadBenchmarkPreset('OPTICAL_SAR', 5)}
+              className="px-2 py-1 bg-white/5 hover:bg-white/15 text-white/80 border border-white/10 text-[10px]"
+            >
+              5. Optical+SAR Fusion
+            </button>
+          </div>
           </div>
 
           {/* Step 3: Input Compatibility & Location Validation */}
@@ -664,7 +803,7 @@ export const UploadWizardModal: React.FC<UploadWizardModalProps> = ({
             {/* Manual Location Override */}
             <div className="flex items-center justify-between pt-2 border-t border-white/10 text-[10px]">
               <span className="text-white/50 flex items-center gap-1.5">
-                <MapPin className="w-3.5 h-3.5 text-[#3df2ff]" />
+                <MapPin className="w-3.5 h-3.5 text-sq-accent" />
                 {manualLocation
                   ? `Manual Coordinates: ${manualLocation.lat.toFixed(2)}°N, ${manualLocation.lon.toFixed(2)}°E (${manualLocation.name})`
                   : primaryImage?.geospatialInfo.hasGeospatial
@@ -689,7 +828,10 @@ export const UploadWizardModal: React.FC<UploadWizardModalProps> = ({
             <input
               type="text"
               value={userPrompt}
-              onChange={(e) => setUserPrompt(e.target.value)}
+              onChange={(e) => {
+                setUserPrompt(e.target.value);
+                setPromptEdited(true);
+              }}
               placeholder="e.g. Detect surface water extent and verify against SAR backscatter"
               className="w-full bg-black/80 border border-white/20 px-3.5 py-2.5 text-xs text-white placeholder-white/40 font-mono-code"
             />
@@ -700,7 +842,10 @@ export const UploadWizardModal: React.FC<UploadWizardModalProps> = ({
                 <button
                   key={p}
                   type="button"
-                  onClick={() => setUserPrompt(p)}
+                  onClick={() => {
+                    setUserPrompt(p);
+                    setPromptEdited(true);
+                  }}
                   className="px-2 py-0.5 bg-white/5 hover:bg-white/10 text-white/60 hover:text-white border border-white/10 text-[10px] transition-colors"
                 >
                   "{p}"
@@ -715,23 +860,24 @@ export const UploadWizardModal: React.FC<UploadWizardModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white text-xs font-mono-code uppercase font-bold"
+            className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white text-xs font-sans uppercase font-bold"
           >
             Cancel
           </button>
+
 
           <button
             type="button"
             disabled={!primaryImage || !validationReport.canExecuteAnalysis}
             onClick={handleLaunch}
-            className={`px-6 py-2.5 text-xs font-mono-code uppercase font-bold flex items-center gap-2 shadow-lg transition-all ${
+            className={`px-6 py-2.5 text-xs font-sans uppercase font-bold flex items-center gap-2 shadow-lg transition-all ${
               primaryImage && validationReport.canExecuteAnalysis
-                ? 'bg-[#3df2ff] hover:bg-[#3df2ff]/90 text-black cursor-pointer'
+                ? 'bg-sq-accent hover:bg-sq-accent/90 text-black cursor-pointer'
                 : 'bg-white/10 text-white/30 cursor-not-allowed border border-white/10'
             }`}
           >
             <Sparkles className="w-4 h-4" />
-            <span>Launch Agentic Analysis Workflow</span>
+            <span>Analyze image{mode === 'SINGLE_IMAGE' ? '' : 's'}</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </div>

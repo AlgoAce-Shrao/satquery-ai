@@ -33,7 +33,7 @@ export const TourControls: React.FC<TourControlsProps> = ({
           RESULT {currentIndex + 1} OF {results.length}
         </span>
         <span className="text-white/30">•</span>
-        <span className="text-[10px] font-mono-code text-[#3df2ff] font-bold">
+        <span className="text-[10px] font-mono-code text-sq-accent font-bold">
           {currentResult?.siteCode || `SITE_${currentIndex + 1}`}
         </span>
 
@@ -45,7 +45,7 @@ export const TourControls: React.FC<TourControlsProps> = ({
               title={`${idx + 1}. ${r.regionName}`}
               className={`h-1.5 transition-all ${
                 idx === currentIndex
-                  ? 'w-6 bg-[#ff4e00]'
+                  ? 'w-6 bg-sq-amber'
                   : 'w-1.5 bg-white/25 hover:bg-white/60'
               }`}
             />
@@ -67,8 +67,8 @@ export const TourControls: React.FC<TourControlsProps> = ({
           onClick={onToggleTour}
           className={`px-6 py-2 font-black text-xs uppercase tracking-widest transition-all flex items-center gap-2 active:scale-95 shadow-2xl ${
             isTourActive
-              ? 'bg-[#ff4e00] text-black shadow-[0_0_25px_rgba(255,78,0,0.5)]'
-              : 'bg-[#3df2ff] text-black hover:bg-white shadow-[0_0_20px_rgba(61,242,255,0.4)]'
+              ? 'bg-sq-amber text-black shadow-[0_0_25px_rgba(211,166,74,0.5)]'
+              : 'bg-sq-accent text-black hover:bg-white shadow-[0_0_20px_rgba(166,184,106,0.4)]'
           }`}
         >
           {isTourActive ? (

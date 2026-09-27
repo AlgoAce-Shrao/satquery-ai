@@ -8,7 +8,7 @@ interface ErrorBannerProps {
 
 export const ErrorBanner: React.FC<ErrorBannerProps> = ({ message, onDismiss }) => {
   return (
-    <div className="absolute top-20 left-1/2 -translate-x-1/2 z-40 w-[90%] max-w-md bg-black/90 backdrop-blur-xl border border-red-500/50 p-5 shadow-[0_0_50px_rgba(239,68,68,0.15)] animate-in fade-in duration-300">
+    <div className="absolute top-20 left-1/2 -translate-x-1/2 z-40 w-[90%] max-w-md bg-black/90 backdrop-blur-xl border border-red-500/50 p-5 shadow-[0_0_50px_rgba(184,92,74,0.15)] animate-in fade-in duration-300">
       <div className="flex items-center justify-between border-b border-white/10 pb-3 mb-3">
         <div className="flex items-center gap-2">
           <AlertTriangle className="w-4 h-4 text-red-400" />

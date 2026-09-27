@@ -33,32 +33,32 @@ export const AnalysisTimeline: React.FC<AnalysisTimelineProps> = ({
       label: 'Baseline (T0)',
       date: observationPeriod.beforeDate,
       desc: observationPeriod.beforeLabel,
-      color: '#10b981',
+      color: '#7FA66A',
     },
     {
       id: 'DIFFERENCE' as VisualizationMode,
       label: 'Radiometric Delta',
       date: 'Bi-Temporal Diff',
       desc: `${metric.percentageChange > 0 ? '+' : ''}${metric.percentageChange}% Anomaly`,
-      color: '#ff4e00',
+      color: '#D3A64A',
     },
     {
       id: 'AFTER' as VisualizationMode,
       label: 'Target Epoch (T1)',
       date: observationPeriod.afterDate,
       desc: observationPeriod.afterLabel,
-      color: '#d97706',
+      color: '#D39B4A',
     },
   ];
 
   return (
-    <div className="bg-[#08080c] border border-white/15 p-3 font-mono-code text-xs select-none space-y-2.5">
+    <div className="bg-sq-base border border-white/15 p-3 font-mono-code text-xs select-none space-y-2.5">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-1.5 text-white/50 text-[10px] uppercase tracking-wider font-bold">
-          <Clock className="w-3 h-3 text-[#3df2ff]" />
+          <Clock className="w-3 h-3 text-sq-accent" />
           <span>Observation Timeline</span>
         </div>
-        <span className="text-[9px] text-[#3df2ff]">
+        <span className="text-[9px] text-sq-accent">
           Active: {currentMode}
         </span>
       </div>
@@ -73,7 +73,7 @@ export const AnalysisTimeline: React.FC<AnalysisTimelineProps> = ({
               onClick={() => onModeChange(epoch.id)}
               className={`p-2 text-left border transition-all ${
                 isActive
-                  ? 'bg-white/10 border-[#3df2ff] shadow-[0_0_12px_rgba(61,242,255,0.25)]'
+                  ? 'bg-white/10 border-sq-accent shadow-[0_0_12px_rgba(166,184,106,0.25)]'
                   : 'bg-white/5 hover:bg-white/10 border-white/10 opacity-70 hover:opacity-100'
               }`}
             >
@@ -84,7 +84,7 @@ export const AnalysisTimeline: React.FC<AnalysisTimelineProps> = ({
                 >
                   {epoch.label}
                 </span>
-                {isActive && <div className="w-1.5 h-1.5 rounded-full bg-[#3df2ff] animate-ping" />}
+                {isActive && <div className="w-1.5 h-1.5 rounded-full bg-sq-accent animate-ping" />}
               </div>
               <p className="text-[10px] font-bold text-white mt-0.5 truncate">{epoch.date}</p>
               <p className="text-[8px] text-white/40 truncate">{epoch.desc}</p>

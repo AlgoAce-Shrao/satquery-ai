@@ -77,14 +77,15 @@ export const InteractiveImageCanvas: React.FC<InteractiveImageCanvasProps> = ({
   };
 
   const evidenceItems = analysisResult?.spatialEvidence || [];
+  const groundedItems = evidenceItems.filter((item) => item.imageBox);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-6 bg-black/90 backdrop-blur-md animate-in fade-in select-none">
-      <div className="relative w-full max-w-5xl h-[85vh] flex flex-col bg-[#0b0c10] border border-white/20 shadow-[0_0_90px_rgba(0,0,0,0.95)]">
+      <div className="relative w-full max-w-5xl h-[85vh] flex flex-col bg-sq-surface border border-white/20 shadow-[0_0_90px_rgba(17,18,15,0.95)]">
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-3 border-b border-white/10 bg-white/[0.02]">
           <div className="flex items-center gap-3">
-            <div className="p-1.5 bg-[#3df2ff]/10 border border-[#3df2ff]/30 text-[#3df2ff]">
+            <div className="p-1.5 bg-sq-accent/10 border border-sq-accent/30 text-sq-accent">
               <Eye className="w-4 h-4" />
             </div>
             <div>
@@ -105,13 +106,13 @@ export const InteractiveImageCanvas: React.FC<InteractiveImageCanvasProps> = ({
             </button>
             <button
               onClick={() => setActiveLayer('EVIDENCE')}
-              className={`px-2 py-1 ${activeLayer === 'EVIDENCE' ? 'bg-[#3df2ff] text-black shadow' : 'text-white/50 hover:text-white'}`}
+              className={`px-2 py-1 ${activeLayer === 'EVIDENCE' ? 'bg-sq-accent text-black shadow' : 'text-white/50 hover:text-white'}`}
             >
               Spatial Evidence
             </button>
             <button
               onClick={() => setActiveLayer('MASK')}
-              className={`px-2 py-1 ${activeLayer === 'MASK' ? 'bg-[#ff4e00] text-black shadow' : 'text-white/50 hover:text-white'}`}
+              className={`px-2 py-1 ${activeLayer === 'MASK' ? 'bg-sq-amber text-black shadow' : 'text-white/50 hover:text-white'}`}
             >
               Class Mask
             </button>
@@ -149,37 +150,42 @@ export const InteractiveImageCanvas: React.FC<InteractiveImageCanvasProps> = ({
                 className="max-w-[700px] max-h-[500px] object-contain border border-white/20 shadow-2xl"
               />
 
-              {/* Spatial Evidence SVG Annotations Overlay */}
-              {activeLayer === 'EVIDENCE' && (
-                <svg className="absolute inset-0 w-full h-full pointer-events-none">
-                  {/* Bounding box simulation for grounded items */}
-                  <rect
-                    x="25%"
-                    y="25%"
-                    width="50%"
-                    height="50%"
-                    fill="rgba(61, 242, 255, 0.12)"
-                    stroke="#3df2ff"
-                    strokeWidth="2"
-                    strokeDasharray="4 2"
-                  />
-                  <text
-                    x="26%"
-                    y="24%"
-                    fill="#3df2ff"
-                    fontSize="11"
-                    fontFamily="monospace"
-                    fontWeight="bold"
-                  >
-                    AI Grounded Region [94% Confidence]
-                  </text>
-                </svg>
+              {/* Spatial Evidence Overlay — only regions the analysis actually located on this image */}
+              {activeLayer === 'EVIDENCE' && groundedItems.length > 0 && (
+                <div className="absolute inset-0 pointer-events-none">
+                  {groundedItems.map((item) => {
+                    const [y0, x0, y1, x1] = item.imageBox!;
+                    const tone =
+                      item.changeStatus === 'REMOVED_DECREASED'
+                        ? 'border-sq-critical bg-sq-critical/15 text-sq-critical'
+                        : item.changeStatus === 'NEW_INCREASED'
+                        ? 'border-sq-accent bg-sq-accent/15 text-sq-accent'
+                        : 'border-sq-amber bg-sq-amber/10 text-sq-amber';
+                    const selected = selectedEvidenceId === item.id;
+                    return (
+                      <div
+                        key={item.id}
+                        className={`absolute border-2 ${tone} ${selected ? 'ring-2 ring-white/70' : ''}`}
+                        style={{
+                          top: `${y0 * 100}%`,
+                          left: `${x0 * 100}%`,
+                          height: `${(y1 - y0) * 100}%`,
+                          width: `${(x1 - x0) * 100}%`,
+                        }}
+                      >
+                        <span className="absolute -top-5 left-0 whitespace-nowrap bg-black/85 px-1 font-mono-code text-[9px] font-bold uppercase">
+                          {item.label} · {Math.round(item.confidence * 100)}%
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
               )}
 
               {/* Class Mask Overlay */}
               {activeLayer === 'MASK' && (
-                <div className="absolute inset-0 bg-[#ff4e00]/20 mix-blend-screen pointer-events-none flex items-center justify-center border-2 border-[#ff4e00]">
-                  <span className="text-xs font-mono-code font-bold text-[#ff4e00] bg-black/80 px-2 py-1 border border-[#ff4e00]/40">
+                <div className="absolute inset-0 bg-sq-amber/20 mix-blend-screen pointer-events-none flex items-center justify-center border-2 border-sq-amber">
+                  <span className="text-xs font-mono-code font-bold text-sq-amber bg-black/80 px-2 py-1 border border-sq-amber/40">
                     Radiometric Anomaly Segmentation Mask
                   </span>
                 </div>
@@ -188,7 +194,7 @@ export const InteractiveImageCanvas: React.FC<InteractiveImageCanvasProps> = ({
 
             {/* Bottom HUD: Coordinates & Navigation Controls */}
             <div className="absolute bottom-3 left-3 bg-black/80 border border-white/20 px-3 py-1.5 text-[10px] font-mono-code text-white/70 flex items-center gap-3 backdrop-blur-md">
-              <span className="flex items-center gap-1 text-[#3df2ff]">
+              <span className="flex items-center gap-1 text-sq-accent">
                 <Crosshair className="w-3 h-3" />
                 Pixel: {cursorPos.x}, {cursorPos.y}
               </span>
@@ -225,10 +231,10 @@ export const InteractiveImageCanvas: React.FC<InteractiveImageCanvasProps> = ({
           </div>
 
           {/* Right: Spatial Evidence Sidebar */}
-          <div className="w-full md:w-80 border-t md:border-t-0 md:border-l border-white/10 bg-[#0d0e14] p-4 space-y-4 overflow-y-auto text-xs font-mono-code">
+          <div className="w-full md:w-80 border-t md:border-t-0 md:border-l border-white/10 bg-sq-surface p-4 space-y-4 overflow-y-auto text-xs font-mono-code">
             <div className="border-b border-white/10 pb-2">
               <h4 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-[#3df2ff]" />
+                <Sparkles className="w-3.5 h-3.5 text-sq-accent" />
                 <span>Extracted Spatial Evidence</span>
               </h4>
               <p className="text-[10px] text-white/50">
@@ -244,12 +250,12 @@ export const InteractiveImageCanvas: React.FC<InteractiveImageCanvasProps> = ({
                     onClick={() => setSelectedEvidenceId(item.id)}
                     className={`p-2.5 border transition-all cursor-pointer ${
                       selectedEvidenceId === item.id
-                        ? 'border-[#3df2ff] bg-[#3df2ff]/10'
+                        ? 'border-sq-accent bg-sq-accent/10'
                         : 'border-white/10 bg-white/5 hover:border-white/20'
                     }`}
                   >
                     <div className="flex items-center justify-between text-[11px] font-bold text-white mb-1">
-                      <span className="text-[#3df2ff]">{item.label}</span>
+                      <span className="text-sq-accent">{item.label}</span>
                       <span className="text-[10px] text-white/50">{Math.round(item.confidence * 100)}% Conf</span>
                     </div>
                     {item.description && (

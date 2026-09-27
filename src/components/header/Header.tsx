@@ -55,7 +55,7 @@ export const Header: React.FC<HeaderProps> = ({
   };
 
   return (
-    <header className="flex items-center justify-between px-4 sm:px-6 py-2.5 border-b border-white/10 bg-[#050506] shrink-0 select-none z-30 gap-3 sm:gap-4">
+    <header className="flex items-center justify-between px-4 sm:px-6 py-2.5 border-b border-white/10 bg-sq-base shrink-0 select-none z-30 gap-3 sm:gap-4">
       {/* Brand / Title */}
       <div className="flex items-center gap-3 shrink-0">
         <button
@@ -64,10 +64,10 @@ export const Header: React.FC<HeaderProps> = ({
           className="text-left space-y-0.5 group cursor-pointer"
         >
           <div className="flex items-center gap-2">
-            <h1 className="text-xl sm:text-2xl font-black tracking-tighter leading-none text-white uppercase font-sans group-hover:text-[#3df2ff] transition-colors">
-              SatQuery <span className="text-[#3df2ff]">AI</span>
+            <h1 className="text-xl sm:text-2xl font-black tracking-tighter leading-none text-white uppercase font-sans group-hover:text-sq-accent transition-colors">
+              SatQuery <span className="text-sq-accent">AI</span>
             </h1>
-            <span className="hidden xl:inline-block text-[8px] font-mono-code px-1.5 py-0.5 border border-[#3df2ff]/30 text-[#3df2ff] bg-[#3df2ff]/10 uppercase font-bold tracking-widest">
+            <span className="hidden xl:inline-block text-[8px] font-mono-code px-1.5 py-0.5 border border-sq-accent/30 text-sq-accent bg-sq-accent/10 uppercase font-bold tracking-widest">
               Live
             </span>
           </div>
@@ -81,7 +81,7 @@ export const Header: React.FC<HeaderProps> = ({
       <div className="flex-1 max-w-3xl flex items-center gap-2">
         <form
           onSubmit={handleSubmit}
-          className="flex-1 bg-black/70 hover:bg-black/90 border border-white/20 hover:border-[#3df2ff]/50 focus-within:border-[#3df2ff] px-3 py-1.5 shadow-lg transition-all flex items-center gap-2"
+          className="flex-1 bg-black/70 hover:bg-black/90 border border-white/20 hover:border-sq-accent/50 focus-within:border-sq-accent px-3 py-1.5 shadow-lg transition-all flex items-center gap-2"
         >
           <Search className="w-4 h-4 text-white/40 shrink-0" />
           <input
@@ -95,10 +95,10 @@ export const Header: React.FC<HeaderProps> = ({
           <button
             type="submit"
             disabled={isProcessing || !inputValue.trim()}
-            className={`px-3 py-1 font-mono-code text-[11px] font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 shrink-0 ${
+            className={`px-3 py-1 font-sans text-[11px] font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 shrink-0 ${
               isProcessing
                 ? 'bg-white/10 text-white/40 cursor-wait'
-                : 'bg-[#3df2ff] text-black hover:bg-white'
+                : 'bg-sq-accent text-black hover:bg-sq-accent-hover'
             }`}
           >
             <span>{isProcessing ? 'Analyzing...' : 'Investigate'}</span>
@@ -123,7 +123,7 @@ export const Header: React.FC<HeaderProps> = ({
           <p className="text-[8px] tracking-widest text-white/40 uppercase font-mono-code">
             Current Observation
           </p>
-          <p className="text-xs font-mono-code text-[#3df2ff] font-bold tracking-wider">
+          <p className="text-xs font-mono-code text-sq-accent font-bold tracking-wider">
             {observationId}
           </p>
         </div>
@@ -132,11 +132,12 @@ export const Header: React.FC<HeaderProps> = ({
           {onOpenImageUpload && (
             <button
               onClick={onOpenImageUpload}
-              title="Ingest Satellite Image Scene"
-              className="p-1.5 hover:bg-white/10 text-white/70 hover:text-[#3df2ff] transition-colors border border-white/10 flex items-center gap-1 text-[10px] font-mono-code uppercase font-bold"
+              title="Upload an image to analyze"
+              aria-label="Upload an image to analyze"
+              className="px-2 py-1.5 bg-sq-accent/10 hover:bg-sq-accent/20 text-sq-accent border border-sq-accent/40 hover:border-sq-accent transition-colors flex items-center gap-1.5 text-[10px] font-sans uppercase font-bold"
             >
               <Upload className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Ingest</span>
+              <span className="hidden sm:inline">Upload image</span>
             </button>
           )}
           <button
@@ -148,7 +149,7 @@ export const Header: React.FC<HeaderProps> = ({
           </button>
           <button
             title="User Profile"
-            className="w-7 h-7 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-white/80 hover:text-white hover:border-[#3df2ff] transition-all text-xs font-mono-code font-bold ml-1"
+            className="w-7 h-7 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-white/80 hover:text-white hover:border-sq-accent transition-all text-xs font-sans font-bold ml-1"
           >
             AI
           </button>

@@ -53,6 +53,49 @@ export const TemporalComparisonViewer: React.FC<TemporalComparisonViewerProps> =
 
   const containerRef = useRef<HTMLDivElement>(null);
 
+  // Hooks must run on every render, so they sit above the early return below.
+  const handleMouseMove = useCallback(
+    (e: MouseEvent) => {
+      if (!isDragging || !containerRef.current) return;
+      const rect = containerRef.current.getBoundingClientRect();
+      const x = Math.max(0, Math.min(e.clientX - rect.left, rect.width));
+      const percentage = (x / rect.width) * 100;
+      setSliderPosition(Math.max(5, Math.min(95, percentage)));
+    },
+    [isDragging]
+  );
+
+  const handleTouchMove = useCallback(
+    (e: TouchEvent) => {
+      if (!isDragging || !containerRef.current) return;
+      const rect = containerRef.current.getBoundingClientRect();
+      const touch = e.touches[0];
+      const x = Math.max(0, Math.min(touch.clientX - rect.left, rect.width));
+      const percentage = (x / rect.width) * 100;
+      setSliderPosition(Math.max(5, Math.min(95, percentage)));
+    },
+    [isDragging]
+  );
+
+  const handleMouseUp = useCallback(() => {
+    setIsDragging(false);
+  }, []);
+
+  useEffect(() => {
+    if (isDragging) {
+      window.addEventListener('mousemove', handleMouseMove);
+      window.addEventListener('mouseup', handleMouseUp);
+      window.addEventListener('touchmove', handleTouchMove);
+      window.addEventListener('touchend', handleMouseUp);
+    }
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+      window.removeEventListener('touchmove', handleTouchMove);
+      window.removeEventListener('touchend', handleMouseUp);
+    };
+  }, [isDragging, handleMouseMove, handleMouseUp, handleTouchMove]);
+
   if (!isOpen || !activeResult) return null;
 
   const {
@@ -115,47 +158,6 @@ export const TemporalComparisonViewer: React.FC<TemporalComparisonViewerProps> =
     setIsDragging(true);
   };
 
-  const handleMouseMove = useCallback(
-    (e: MouseEvent) => {
-      if (!isDragging || !containerRef.current) return;
-      const rect = containerRef.current.getBoundingClientRect();
-      const x = Math.max(0, Math.min(e.clientX - rect.left, rect.width));
-      const percentage = (x / rect.width) * 100;
-      setSliderPosition(Math.max(5, Math.min(95, percentage)));
-    },
-    [isDragging]
-  );
-
-  const handleTouchMove = useCallback(
-    (e: TouchEvent) => {
-      if (!isDragging || !containerRef.current) return;
-      const rect = containerRef.current.getBoundingClientRect();
-      const touch = e.touches[0];
-      const x = Math.max(0, Math.min(touch.clientX - rect.left, rect.width));
-      const percentage = (x / rect.width) * 100;
-      setSliderPosition(Math.max(5, Math.min(95, percentage)));
-    },
-    [isDragging]
-  );
-
-  const handleMouseUp = useCallback(() => {
-    setIsDragging(false);
-  }, []);
-
-  useEffect(() => {
-    if (isDragging) {
-      window.addEventListener('mousemove', handleMouseMove);
-      window.addEventListener('mouseup', handleMouseUp);
-      window.addEventListener('touchmove', handleTouchMove);
-      window.addEventListener('touchend', handleMouseUp);
-    }
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
-      window.removeEventListener('touchmove', handleTouchMove);
-      window.removeEventListener('touchend', handleMouseUp);
-    };
-  }, [isDragging, handleMouseMove, handleMouseUp, handleTouchMove]);
 
   // Default change regions if none specified
   const changeRegions: SpatialEvidenceItem[] =
@@ -195,12 +197,12 @@ export const TemporalComparisonViewer: React.FC<TemporalComparisonViewerProps> =
       <div
         className={`relative w-full ${
           isExpanded ? 'max-w-[98vw] h-[96vh]' : 'max-w-6xl h-[88vh]'
-        } bg-[#08080c] border border-white/20 shadow-[0_0_90px_rgba(0,0,0,0.95)] flex flex-col overflow-hidden transition-all duration-300`}
+        } bg-sq-base border border-white/20 shadow-[0_0_90px_rgba(17,18,15,0.95)] flex flex-col overflow-hidden transition-all duration-300`}
       >
         {/* Top Mission-Control Bar */}
         <div className="flex items-center justify-between px-5 py-3.5 border-b border-white/15 bg-black/60">
           <div className="flex items-center gap-3">
-            <span className="p-1.5 bg-[#ff4e00]/20 text-[#ff4e00] border border-[#ff4e00]/40 text-[10px] font-mono-code font-bold uppercase">
+            <span className="p-1.5 bg-sq-amber/20 text-sq-amber border border-sq-amber/40 text-[10px] font-mono-code font-bold uppercase">
               TEMPORAL COMPARISON
             </span>
             <div>
@@ -208,7 +210,7 @@ export const TemporalComparisonViewer: React.FC<TemporalComparisonViewerProps> =
                 <span>{regionName}</span>
                 <span className="text-xs font-mono-code text-white/50">• {country}</span>
               </h2>
-              <p className="text-[10px] font-mono-code text-[#3df2ff]">
+              <p className="text-[10px] font-mono-code text-sq-accent">
                 BASELINE: {observationPeriod.beforeDate} → TARGET: {observationPeriod.afterDate}
               </p>
             </div>
@@ -220,7 +222,7 @@ export const TemporalComparisonViewer: React.FC<TemporalComparisonViewerProps> =
               onClick={() => setActiveLayer('OPTICAL_RGB')}
               className={`px-3 py-1 uppercase font-bold transition-all ${
                 activeLayer === 'OPTICAL_RGB'
-                  ? 'bg-[#3df2ff] text-black shadow'
+                  ? 'bg-sq-accent text-black shadow'
                   : 'text-white/70 hover:text-white'
               }`}
             >
@@ -230,7 +232,7 @@ export const TemporalComparisonViewer: React.FC<TemporalComparisonViewerProps> =
               onClick={() => setActiveLayer('FALSE_COLOR_NIR')}
               className={`px-3 py-1 uppercase font-bold transition-all ${
                 activeLayer === 'FALSE_COLOR_NIR'
-                  ? 'bg-[#f43f5e] text-white shadow'
+                  ? 'bg-sq-critical text-white shadow'
                   : 'text-white/70 hover:text-white'
               }`}
             >
@@ -240,7 +242,7 @@ export const TemporalComparisonViewer: React.FC<TemporalComparisonViewerProps> =
               onClick={() => setActiveLayer('SAR_RADAR')}
               className={`px-3 py-1 uppercase font-bold transition-all ${
                 activeLayer === 'SAR_RADAR'
-                  ? 'bg-[#0284c7] text-white shadow'
+                  ? 'bg-sq-water text-white shadow'
                   : 'text-white/70 hover:text-white'
               }`}
             >
@@ -250,7 +252,7 @@ export const TemporalComparisonViewer: React.FC<TemporalComparisonViewerProps> =
               onClick={() => setActiveLayer('DIFFERENCE_HEATMAP')}
               className={`px-3 py-1 uppercase font-bold transition-all ${
                 activeLayer === 'DIFFERENCE_HEATMAP'
-                  ? 'bg-[#ff4e00] text-black shadow'
+                  ? 'bg-sq-amber text-black shadow'
                   : 'text-white/70 hover:text-white'
               }`}
             >
@@ -294,14 +296,14 @@ export const TemporalComparisonViewer: React.FC<TemporalComparisonViewerProps> =
                   className="w-full h-full object-cover pointer-events-none"
                 />
                 {/* After Epoch Floating Label (Top Right) */}
-                <div className="absolute top-4 right-4 z-10 bg-black/80 backdrop-blur-md px-3 py-1.5 border border-[#ff4e00]/60 shadow-xl">
+                <div className="absolute top-4 right-4 z-10 bg-black/80 backdrop-blur-md px-3 py-1.5 border border-sq-amber/60 shadow-xl">
                   <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-[#ff4e00] animate-pulse"></span>
+                    <span className="w-2 h-2 rounded-full bg-sq-amber animate-pulse"></span>
                     <span className="text-[10px] font-mono-code font-bold text-white uppercase tracking-wider">
                       AFTER • {observationPeriod.afterDate}
                     </span>
                   </div>
-                  <p className="text-[9px] font-mono-code text-[#ff4e00] mt-0.5">
+                  <p className="text-[9px] font-mono-code text-sq-amber mt-0.5">
                     {metric.name.split(' ')[0]}: {metric.afterValue.toFixed(2)} ({metric.percentageChange > 0 ? '+' : ''}
                     {metric.percentageChange}%)
                   </p>
@@ -326,14 +328,14 @@ export const TemporalComparisonViewer: React.FC<TemporalComparisonViewerProps> =
                     className="w-full h-full object-cover pointer-events-none"
                   />
                   {/* Before Epoch Floating Label (Top Left) */}
-                  <div className="absolute top-4 left-4 z-10 bg-black/80 backdrop-blur-md px-3 py-1.5 border border-[#10b981]/60 shadow-xl">
+                  <div className="absolute top-4 left-4 z-10 bg-black/80 backdrop-blur-md px-3 py-1.5 border border-sq-positive/60 shadow-xl">
                     <div className="flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-[#10b981]"></span>
+                      <span className="w-2 h-2 rounded-full bg-sq-positive"></span>
                       <span className="text-[10px] font-mono-code font-bold text-white uppercase tracking-wider">
                         BEFORE • {observationPeriod.beforeDate}
                       </span>
                     </div>
-                    <p className="text-[9px] font-mono-code text-[#10b981] mt-0.5">
+                    <p className="text-[9px] font-mono-code text-sq-positive mt-0.5">
                       Baseline {metric.name.split(' ')[0]}: {metric.beforeValue.toFixed(2)}
                     </p>
                   </div>
@@ -342,7 +344,7 @@ export const TemporalComparisonViewer: React.FC<TemporalComparisonViewerProps> =
 
               {/* Vertical Draggable Divider Bar */}
               <div
-                className="absolute top-0 bottom-0 z-20 w-1 bg-white cursor-ew-resize shadow-[0_0_15px_rgba(255,255,255,0.8)] flex items-center justify-center pointer-events-none"
+                className="absolute top-0 bottom-0 z-20 w-1 bg-white cursor-ew-resize shadow-[0_0_15px_rgba(230,226,214,0.8)] flex items-center justify-center pointer-events-none"
                 style={{ left: `${sliderPosition}%` }}
               >
                 {/* Center Drag Handle Badge */}
@@ -351,7 +353,7 @@ export const TemporalComparisonViewer: React.FC<TemporalComparisonViewerProps> =
                   onMouseEnter={() => setIsHoveringSlider(true)}
                   onMouseLeave={() => setIsHoveringSlider(false)}
                 >
-                  <SlidersHorizontal className="w-4 h-4 text-[#3df2ff] rotate-90" />
+                  <SlidersHorizontal className="w-4 h-4 text-sq-accent rotate-90" />
                 </div>
               </div>
 
@@ -366,7 +368,7 @@ export const TemporalComparisonViewer: React.FC<TemporalComparisonViewerProps> =
                       onFocusOnMap();
                       onClose();
                     }}
-                    className="bg-[#3df2ff] hover:bg-[#3df2ff]/80 text-black px-3.5 py-1.5 text-[10px] font-mono-code font-bold uppercase tracking-wider border border-[#3df2ff] shadow-xl flex items-center gap-1.5 pointer-events-auto transition-all active:scale-95"
+                    className="bg-sq-accent hover:bg-sq-accent/80 text-black px-3.5 py-1.5 text-[10px] font-sans font-bold uppercase tracking-wider border border-sq-accent shadow-xl flex items-center gap-1.5 pointer-events-auto transition-all active:scale-95"
                   >
                     <Compass className="w-3.5 h-3.5" />
                     <span>View on 3D Globe</span>
@@ -377,7 +379,7 @@ export const TemporalComparisonViewer: React.FC<TemporalComparisonViewerProps> =
           </div>
 
           {/* Right Side Inspector & Change Region Breakdown */}
-          <aside className="w-full lg:w-96 bg-[#0c0c10] border-t lg:border-t-0 lg:border-l border-white/15 p-5 flex flex-col justify-between overflow-y-auto space-y-5 shrink-0 select-none">
+          <aside className="w-full lg:w-96 bg-sq-surface border-t lg:border-t-0 lg:border-l border-white/15 p-5 flex flex-col justify-between overflow-y-auto space-y-5 shrink-0 select-none">
             <div className="space-y-4">
               {/* Header */}
               <div>
@@ -394,7 +396,7 @@ export const TemporalComparisonViewer: React.FC<TemporalComparisonViewerProps> =
                     {metric.percentageChange > 0 ? '+' : ''}
                     {metric.percentageChange}%
                   </span>
-                  <span className="text-xs font-mono-code text-[#ff4e00] uppercase font-bold">
+                  <span className="text-xs font-mono-code text-sq-amber uppercase font-bold">
                     {metric.severity} IMPACT
                   </span>
                 </div>
@@ -405,7 +407,7 @@ export const TemporalComparisonViewer: React.FC<TemporalComparisonViewerProps> =
                   </div>
                   <div>
                     <span className="text-white/40 block">T1 TARGET</span>
-                    <span className="font-bold text-[#ff4e00]">{metric.afterValue.toFixed(2)}</span>
+                    <span className="font-bold text-sq-amber">{metric.afterValue.toFixed(2)}</span>
                   </div>
                 </div>
               </div>
@@ -427,7 +429,7 @@ export const TemporalComparisonViewer: React.FC<TemporalComparisonViewerProps> =
                         }}
                         className={`p-2.5 border transition-all cursor-pointer ${
                           isSelected
-                            ? 'bg-[#3df2ff]/10 border-[#3df2ff] text-white shadow'
+                            ? 'bg-sq-accent/10 border-sq-accent text-white shadow'
                             : 'bg-white/5 hover:bg-white/10 border-white/10 text-white/70'
                         }`}
                       >
@@ -438,7 +440,7 @@ export const TemporalComparisonViewer: React.FC<TemporalComparisonViewerProps> =
                               region.changeStatus === 'NEW_INCREASED'
                                 ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40'
                                 : region.changeStatus === 'REMOVED_DECREASED'
-                                ? 'bg-[#ff4e00]/20 text-[#ff4e00] border-[#ff4e00]/40'
+                                ? 'bg-sq-critical/20 text-sq-critical border-sq-critical/40'
                                 : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
                             }`}
                           >
@@ -453,8 +455,8 @@ export const TemporalComparisonViewer: React.FC<TemporalComparisonViewerProps> =
                           {region.description}
                         </p>
                         <div className="flex items-center justify-between text-[9px] font-mono-code text-white/40 mt-1.5 pt-1 border-t border-white/5">
-                          <span>Footprint: {region.areaSqKm?.toLocaleString()} km²</span>
-                          <span className="text-[#3df2ff]">Confidence: {Math.round(region.confidence * 100)}%</span>
+                          <span>Footprint: {region.areaSqKm ? `${region.areaSqKm.toLocaleString()} km²` : "n/a (image not georeferenced)"}</span>
+                          <span className="text-sq-accent">Confidence: {Math.round(region.confidence * 100)}%</span>
                         </div>
                       </div>
                     );
@@ -465,7 +467,7 @@ export const TemporalComparisonViewer: React.FC<TemporalComparisonViewerProps> =
               {/* AI Inference vs Raw Evidence */}
               <div className="space-y-2 pt-2 border-t border-white/10">
                 <p className="text-[10px] font-mono-code text-white/50 uppercase font-bold tracking-wider flex items-center gap-1.5">
-                  <Bot className="w-3.5 h-3.5 text-[#3df2ff]" />
+                  <Bot className="w-3.5 h-3.5 text-sq-accent" />
                   <span>AI Remote Sensing Inference</span>
                 </p>
                 <div className="p-3 bg-black/60 border border-white/10 space-y-2 text-xs">
@@ -492,7 +494,7 @@ export const TemporalComparisonViewer: React.FC<TemporalComparisonViewerProps> =
                   if (onFocusOnMap) onFocusOnMap();
                   onClose();
                 }}
-                className="w-full py-2.5 bg-[#ff4e00] hover:bg-[#ff4e00]/90 text-black font-mono-code text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-lg"
+                className="w-full py-2.5 bg-sq-amber hover:bg-sq-amber/90 text-black font-sans text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-lg"
               >
                 <Compass className="w-4 h-4" />
                 <span>Locate on 3D Earth</span>

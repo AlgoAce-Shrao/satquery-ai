@@ -30,7 +30,7 @@ export const WorldMinimap: React.FC<WorldMinimapProps> = ({
       {/* Header */}
       <div className="flex items-center justify-between border-b border-white/10 pb-1.5 mb-2">
         <div className="flex items-center gap-1.5">
-          <Globe2 className="w-3 h-3 text-[#3df2ff]" />
+          <Globe2 className="w-3 h-3 text-sq-accent" />
           <span className="text-[9px] font-mono-code font-bold text-white/80 uppercase tracking-widest">
             World Overview
           </span>
@@ -39,53 +39,53 @@ export const WorldMinimap: React.FC<WorldMinimapProps> = ({
       </div>
 
       {/* SVG Map Canvas */}
-      <div className="relative w-full h-[110px] bg-[#070e17] border border-white/10 overflow-hidden">
+      <div className="relative w-full h-[110px] bg-sq-surface border border-white/10 overflow-hidden">
         <svg viewBox="0 0 220 110" className="w-full h-full">
           {/* Subtle Lat/Lon Grid lines */}
-          <line x1="0" y1="55" x2="220" y2="55" stroke="rgba(255,255,255,0.08)" strokeDasharray="2,2" />
-          <line x1="110" y1="0" x2="110" y2="110" stroke="rgba(255,255,255,0.08)" strokeDasharray="2,2" />
+          <line x1="0" y1="55" x2="220" y2="55" stroke="rgba(230,226,214,0.08)" strokeDasharray="2,2" />
+          <line x1="110" y1="0" x2="110" y2="110" stroke="rgba(230,226,214,0.08)" strokeDasharray="2,2" />
 
           {/* World Continents Rough Shapes */}
           {/* North America */}
           <path
             d="M20 20 Q45 15 65 25 Q75 45 60 55 Q40 50 25 40 Z"
-            fill="#0f2238"
-            stroke="rgba(61,242,255,0.25)"
+            fill="#2A2B24"
+            stroke="rgba(166,184,106,0.25)"
             strokeWidth="0.5"
           />
           {/* South America */}
           <path
             d="M55 58 Q75 62 70 85 Q60 100 50 85 Q45 70 55 58 Z"
-            fill="#0f2238"
-            stroke="rgba(61,242,255,0.25)"
+            fill="#2A2B24"
+            stroke="rgba(166,184,106,0.25)"
             strokeWidth="0.5"
           />
           {/* Europe */}
           <path
             d="M100 20 Q125 18 130 35 Q115 45 105 38 Z"
-            fill="#0f2238"
-            stroke="rgba(61,242,255,0.25)"
+            fill="#2A2B24"
+            stroke="rgba(166,184,106,0.25)"
             strokeWidth="0.5"
           />
           {/* Africa */}
           <path
             d="M105 40 Q130 42 125 75 Q115 85 105 70 Q95 55 105 40 Z"
-            fill="#0f2238"
-            stroke="rgba(61,242,255,0.25)"
+            fill="#2A2B24"
+            stroke="rgba(166,184,106,0.25)"
             strokeWidth="0.5"
           />
           {/* Asia */}
           <path
             d="M130 18 Q185 15 195 45 Q165 60 135 45 Z"
-            fill="#0f2238"
-            stroke="rgba(61,242,255,0.25)"
+            fill="#2A2B24"
+            stroke="rgba(166,184,106,0.25)"
             strokeWidth="0.5"
           />
           {/* Australia */}
           <path
             d="M165 70 Q190 68 185 90 Q165 92 165 70 Z"
-            fill="#0f2238"
-            stroke="rgba(61,242,255,0.25)"
+            fill="#2A2B24"
+            stroke="rgba(166,184,106,0.25)"
             strokeWidth="0.5"
           />
 
@@ -105,7 +105,7 @@ export const WorldMinimap: React.FC<WorldMinimapProps> = ({
                     cy={pt.y}
                     r="5"
                     fill="none"
-                    stroke="#3df2ff"
+                    stroke="#A6B86A"
                     strokeWidth="0.75"
                     className="animate-ping"
                   />
@@ -114,8 +114,8 @@ export const WorldMinimap: React.FC<WorldMinimapProps> = ({
                   cx={pt.x}
                   cy={pt.y}
                   r={isActive ? 3 : 1.8}
-                  fill={isActive ? '#3df2ff' : '#ff4e00'}
-                  stroke="#ffffff"
+                  fill={isActive ? '#A6B86A' : '#D3A64A'}
+                  stroke="#E6E2D6"
                   strokeWidth="0.4"
                 />
               </g>
@@ -128,12 +128,12 @@ export const WorldMinimap: React.FC<WorldMinimapProps> = ({
               cx={camPos.x}
               cy={camPos.y}
               r="7"
-              fill="rgba(61,242,255,0.12)"
-              stroke="#3df2ff"
+              fill="rgba(166,184,106,0.12)"
+              stroke="#A6B86A"
               strokeWidth="0.6"
               strokeDasharray="1.5,1.5"
             />
-            <circle cx={camPos.x} cy={camPos.y} r="1" fill="#3df2ff" />
+            <circle cx={camPos.x} cy={camPos.y} r="1" fill="#A6B86A" />
           </g>
         </svg>
       </div>

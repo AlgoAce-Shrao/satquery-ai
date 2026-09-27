@@ -85,12 +85,12 @@ export const EvidenceModal: React.FC<EvidenceModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="relative w-full max-w-3xl bg-[#0a0a0c] border border-white/20 p-6 sm:p-8 shadow-[0_0_80px_rgba(0,0,0,0.9)] flex flex-col gap-6 max-h-[90vh] overflow-y-auto">
+      <div className="relative w-full max-w-3xl bg-sq-surface border border-white/20 p-6 sm:p-8 shadow-[0_0_80px_rgba(17,18,15,0.9)] flex flex-col gap-6 max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-white/10 pb-4">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
-              <span className="px-2 py-0.5 bg-[#ff4e00]/20 text-[#ff4e00] border border-[#ff4e00]/40 text-[9px] font-mono-code uppercase font-bold">
+              <span className="px-2 py-0.5 bg-sq-amber/20 text-sq-amber border border-sq-amber/40 text-[9px] font-mono-code uppercase font-bold">
                 {result.siteCode}
               </span>
               <span
@@ -121,8 +121,8 @@ export const EvidenceModal: React.FC<EvidenceModalProps> = ({
         {result.agentTrace && (
           <div className="p-4 bg-white/5 border border-white/15 space-y-3 font-mono-code text-xs">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] text-[#3df2ff] uppercase font-bold flex items-center gap-1.5">
-                <Bot className="w-4 h-4 text-[#3df2ff]" />
+              <span className="text-[10px] text-sq-accent uppercase font-bold flex items-center gap-1.5">
+                <Bot className="w-4 h-4 text-sq-accent" />
                 <span>Multi-Agent Execution Pipeline Trace</span>
               </span>
               <span className="text-[10px] text-white/60">
@@ -133,7 +133,7 @@ export const EvidenceModal: React.FC<EvidenceModalProps> = ({
               <div className="bg-black/50 p-2.5 border border-white/10 space-y-1">
                 <p className="text-[9px] text-white/40 uppercase">Task & Router</p>
                 <p className="text-white font-bold">{result.agentTrace.task}</p>
-                <p className="text-[10px] text-[#3df2ff]">{result.agentTrace.agent}</p>
+                <p className="text-[10px] text-sq-accent">{result.agentTrace.agent}</p>
               </div>
               <div className="bg-black/50 p-2.5 border border-white/10 space-y-1">
                 <p className="text-[9px] text-white/40 uppercase">Vision Models Invoked</p>
@@ -156,7 +156,7 @@ export const EvidenceModal: React.FC<EvidenceModalProps> = ({
         {/* Scientific Index Computation Card */}
         <div className="p-4 bg-white/5 border border-white/10 space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-mono-code uppercase text-[#3df2ff] font-bold">
+            <span className="text-[10px] font-mono-code uppercase text-sq-accent font-bold">
               Deterministic Mathematical Model
             </span>
             <span className="text-[10px] font-mono-code text-white/60">
@@ -171,13 +171,13 @@ export const EvidenceModal: React.FC<EvidenceModalProps> = ({
             </div>
             <div className="bg-black/40 p-3 border border-white/10">
               <p className="text-[10px] text-white/40 uppercase">T1 ({result.observationPeriod.afterLabel})</p>
-              <p className="text-xl font-bold text-[#ff4e00] mt-1">{result.metric.afterValue.toFixed(4)}</p>
+              <p className="text-xl font-bold text-sq-amber mt-1">{result.metric.afterValue.toFixed(4)}</p>
               <p className="text-[9px] text-white/30 mt-0.5">Date: {result.observationPeriod.afterDate}</p>
             </div>
             <div className="bg-black/40 p-3 border border-white/10">
               <p className="text-[10px] text-white/40 uppercase">Delta Difference</p>
-              <p className="text-xl font-bold text-[#ff4e00] mt-1">{result.metric.percentageChange}%</p>
-              <p className="text-[9px] text-[#3df2ff] mt-0.5">Confidence: {Math.round(result.confidence * 100)}%</p>
+              <p className="text-xl font-bold text-sq-amber mt-1">{result.metric.percentageChange}%</p>
+              <p className="text-[9px] text-sq-accent mt-0.5">Confidence: {Math.round(result.confidence * 100)}%</p>
             </div>
           </div>
         </div>
@@ -204,13 +204,13 @@ export const EvidenceModal: React.FC<EvidenceModalProps> = ({
                   const variance = ((band.afterReflectance - band.beforeReflectance) / (band.beforeReflectance || 0.001)) * 100;
                   return (
                     <tr key={idx} className="hover:bg-white/[0.02]">
-                      <td className="p-3 font-bold text-[#3df2ff]">{band.band}</td>
+                      <td className="p-3 font-bold text-sq-accent">{band.band}</td>
                       <td className="p-3 text-white/60">{band.wavelength}</td>
                       <td className="p-3 text-white/90">{band.name}</td>
                       <td className="p-3">{band.beforeReflectance.toFixed(3)}</td>
-                      <td className="p-3 text-[#ff4e00]">{band.afterReflectance.toFixed(3)}</td>
+                      <td className="p-3 text-sq-amber">{band.afterReflectance.toFixed(3)}</td>
                       <td className="p-3 font-bold">
-                        <span className={variance < 0 ? 'text-[#ff4e00]' : 'text-[#3df2ff]'}>
+                        <span className={variance < 0 ? 'text-sq-critical' : 'text-sq-accent'}>
                           {variance > 0 ? '+' : ''}{variance.toFixed(1)}%
                         </span>
                       </td>
@@ -234,7 +234,7 @@ export const EvidenceModal: React.FC<EvidenceModalProps> = ({
           </div>
           <div className="p-3 bg-white/5 border border-white/10">
             <p className="text-[9px] text-white/40 uppercase">Sensor Modality</p>
-            <p className="text-[#3df2ff] font-bold mt-1">{result.modality}</p>
+            <p className="text-sq-accent font-bold mt-1">{result.modality}</p>
           </div>
           <div className="p-3 bg-white/5 border border-white/10">
             <p className="text-[9px] text-white/40 uppercase">Affected Footprint</p>
@@ -249,20 +249,20 @@ export const EvidenceModal: React.FC<EvidenceModalProps> = ({
               onClick={handleDownloadReport}
               className="px-4 py-2 bg-white/10 hover:bg-white/20 border border-white/20 text-xs font-bold uppercase tracking-widest text-white transition-all flex items-center gap-2"
             >
-              {downloaded === 'TXT' ? <Check className="w-3.5 h-3.5 text-[#3df2ff]" /> : <FileText className="w-3.5 h-3.5" />}
+              {downloaded === 'TXT' ? <Check className="w-3.5 h-3.5 text-sq-accent" /> : <FileText className="w-3.5 h-3.5" />}
               <span>{downloaded === 'TXT' ? 'Downloaded' : 'Download Report (.txt)'}</span>
             </button>
             <button
               onClick={handleDownloadJson}
               className="px-4 py-2 bg-white/10 hover:bg-white/20 border border-white/20 text-xs font-bold uppercase tracking-widest text-white transition-all flex items-center gap-2"
             >
-              {downloaded === 'JSON' ? <Check className="w-3.5 h-3.5 text-[#3df2ff]" /> : <Download className="w-3.5 h-3.5" />}
+              {downloaded === 'JSON' ? <Check className="w-3.5 h-3.5 text-sq-accent" /> : <Download className="w-3.5 h-3.5" />}
               <span>{downloaded === 'JSON' ? 'Downloaded' : 'Download Evidence (.json)'}</span>
             </button>
           </div>
           <button
             onClick={onClose}
-            className="px-6 py-2 bg-[#3df2ff] text-black font-black text-xs uppercase tracking-widest hover:bg-white transition-all"
+            className="px-6 py-2 bg-sq-accent text-black font-black text-xs uppercase tracking-widest hover:bg-white transition-all"
           >
             Close
           </button>

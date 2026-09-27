@@ -41,7 +41,7 @@ export const GlobeLayerControls: React.FC<GlobeLayerControlsProps> = ({
         className="flex items-center justify-between px-3.5 py-2 border-b border-white/10 bg-white/5 cursor-pointer hover:bg-white/10 transition-colors"
       >
         <div className="flex items-center gap-2">
-          <Layers className="w-3.5 h-3.5 text-[#3df2ff]" />
+          <Layers className="w-3.5 h-3.5 text-sq-accent" />
           <span className="text-[10px] font-mono-code font-bold text-white uppercase tracking-wider">
             Layer Controls
           </span>
@@ -57,7 +57,7 @@ export const GlobeLayerControls: React.FC<GlobeLayerControlsProps> = ({
           <div>
             <div className="flex items-center justify-between text-[9px] font-mono-code text-white/60 uppercase mb-1">
               <span>Analysis Overlay</span>
-              <span className="text-[#3df2ff] font-bold">{Math.round(opacity * 100)}%</span>
+              <span className="text-sq-accent font-bold">{Math.round(opacity * 100)}%</span>
             </div>
             <input
               type="range"
@@ -66,7 +66,7 @@ export const GlobeLayerControls: React.FC<GlobeLayerControlsProps> = ({
               step="0.05"
               value={opacity}
               onChange={(e) => onOpacityChange(parseFloat(e.target.value))}
-              className="w-full h-1 bg-white/20 rounded-none accent-[#3df2ff] cursor-pointer"
+              className="w-full h-1 bg-white/20 rounded-none accent-sq-accent cursor-pointer"
             />
           </div>
 
@@ -80,7 +80,7 @@ export const GlobeLayerControls: React.FC<GlobeLayerControlsProps> = ({
                 onClick={() => onModeChange('BEFORE')}
                 className={`py-1 transition-all ${
                   mode === 'BEFORE'
-                    ? 'bg-[#10b981] text-black shadow'
+                    ? 'bg-sq-positive text-black shadow'
                     : 'text-white/70 hover:text-white'
                 }`}
               >
@@ -90,7 +90,7 @@ export const GlobeLayerControls: React.FC<GlobeLayerControlsProps> = ({
                 onClick={() => onModeChange('DIFFERENCE')}
                 className={`py-1 transition-all ${
                   mode === 'DIFFERENCE'
-                    ? 'bg-[#ff4e00] text-black shadow-[0_0_10px_rgba(255,78,0,0.4)]'
+                    ? 'bg-sq-amber text-black shadow-[0_0_10px_rgba(211,166,74,0.4)]'
                     : 'text-white/70 hover:text-white'
                 }`}
               >
@@ -100,7 +100,7 @@ export const GlobeLayerControls: React.FC<GlobeLayerControlsProps> = ({
                 onClick={() => onModeChange('AFTER')}
                 className={`py-1 transition-all ${
                   mode === 'AFTER'
-                    ? 'bg-[#d97706] text-black shadow'
+                    ? 'bg-sq-warning text-black shadow'
                     : 'text-white/70 hover:text-white'
                 }`}
               >
@@ -120,7 +120,7 @@ export const GlobeLayerControls: React.FC<GlobeLayerControlsProps> = ({
               <div
                 className={`w-3.5 h-3.5 border flex items-center justify-center transition-colors ${
                   showSatelliteImagery
-                    ? 'bg-[#3df2ff] border-[#3df2ff] text-black'
+                    ? 'bg-sq-accent border-sq-accent text-black'
                     : 'border-white/30'
                 }`}
               >
@@ -137,7 +137,7 @@ export const GlobeLayerControls: React.FC<GlobeLayerControlsProps> = ({
               <div
                 className={`w-3.5 h-3.5 border flex items-center justify-center transition-colors ${
                   showTerrain
-                    ? 'bg-[#3df2ff] border-[#3df2ff] text-black'
+                    ? 'bg-sq-accent border-sq-accent text-black'
                     : 'border-white/30'
                 }`}
               >
@@ -154,7 +154,7 @@ export const GlobeLayerControls: React.FC<GlobeLayerControlsProps> = ({
               <div
                 className={`w-3.5 h-3.5 border flex items-center justify-center transition-colors ${
                   showBorders
-                    ? 'bg-[#3df2ff] border-[#3df2ff] text-black'
+                    ? 'bg-sq-accent border-sq-accent text-black'
                     : 'border-white/30'
                 }`}
               >
@@ -171,7 +171,7 @@ export const GlobeLayerControls: React.FC<GlobeLayerControlsProps> = ({
               <div
                 className={`w-3.5 h-3.5 border flex items-center justify-center transition-colors ${
                   showMarkers
-                    ? 'bg-[#3df2ff] border-[#3df2ff] text-black'
+                    ? 'bg-sq-accent border-sq-accent text-black'
                     : 'border-white/30'
                 }`}
               >

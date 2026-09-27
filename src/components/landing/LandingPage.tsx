@@ -123,7 +123,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   return (
     <div
       ref={containerRef}
-      className="landing-scope relative min-h-screen bg-[#080907] text-[#E8E4D8] selection:bg-[#C88A45] selection:text-black overflow-x-hidden"
+      className="landing-scope relative min-h-screen bg-sq-base text-sq-text selection:bg-sq-amber selection:text-black overflow-x-hidden"
     >
       {/* 1. Top Minimal Sticky Header */}
       <MinimalHeader

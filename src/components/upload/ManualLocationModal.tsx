@@ -38,10 +38,10 @@ export const ManualLocationModal: React.FC<ManualLocationModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in select-none">
-      <div className="relative w-full max-w-md bg-[#0e0e14] border border-white/20 p-5 space-y-4 shadow-[0_0_50px_rgba(0,0,0,0.9)]">
+      <div className="relative w-full max-w-md bg-sq-surface border border-white/20 p-5 space-y-4 shadow-[0_0_50px_rgba(17,18,15,0.9)]">
         <div className="flex items-center justify-between border-b border-white/10 pb-3">
           <div className="flex items-center gap-2">
-            <MapPin className="w-4 h-4 text-[#3df2ff]" />
+            <MapPin className="w-4 h-4 text-sq-accent" />
             <h3 className="text-sm font-bold text-white font-mono-code uppercase tracking-wider">
               Geographic Reference Assignment
             </h3>
@@ -124,7 +124,7 @@ export const ManualLocationModal: React.FC<ManualLocationModalProps> = ({
             </button>
             <button
               type="submit"
-              className="px-4 py-1.5 bg-[#3df2ff] hover:bg-[#3df2ff]/90 text-black text-xs font-bold flex items-center gap-1.5 shadow"
+              className="px-4 py-1.5 bg-sq-accent hover:bg-sq-accent/90 text-black text-xs font-bold flex items-center gap-1.5 shadow"
             >
               <Check className="w-3.5 h-3.5" />
               <span>Link Coordinates</span>

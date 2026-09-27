@@ -389,7 +389,7 @@ export const CinematicScrollCanvas: React.FC<CinematicScrollCanvasProps> = ({ sc
   return (
     <div
       ref={containerRef}
-      className="fixed inset-0 w-full h-full pointer-events-none z-0 bg-[#080907]"
+      className="fixed inset-0 w-full h-full pointer-events-none z-0 bg-sq-base"
       style={{ willChange: 'transform' }}
     />
   );

@@ -2,11 +2,23 @@ import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import cesium from 'vite-plugin-cesium';
 import path from 'path';
-import {defineConfig} from 'vite';
+import {defineConfig, loadEnv} from 'vite';
+import {satqueryVisionDevApi} from './server/vision/viteDevPlugin.js';
 
-export default defineConfig(() => {
+export default defineConfig(({mode}) => {
+  // Server-only secrets (no VITE_ prefix) — read here for the dev API, never exposed to the client bundle.
+  const serverEnv = loadEnv(mode, process.cwd(), '');
+
   return {
-    plugins: [react(), tailwindcss(), cesium()],
+    plugins: [
+      react(),
+      tailwindcss(),
+      cesium(),
+      satqueryVisionDevApi({
+        GEMINI_API_KEY: serverEnv.GEMINI_API_KEY,
+        GEMINI_MODEL: serverEnv.GEMINI_MODEL,
+      }),
+    ],
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),

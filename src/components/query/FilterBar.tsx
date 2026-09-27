@@ -52,6 +52,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
     { label: 'Public Benchmark', value: 'PUBLIC_DATA' },
     { label: 'Demo Synthesized', value: 'DEMO_DATA' },
     { label: 'Real Uploaded-Image Analysis', value: 'USER_RASTER_ANALYSIS' },
+    { label: 'AI Vision Analysis', value: 'AI_VISION_ANALYSIS' },
   ];
 
   const activeFilterCount = [
@@ -75,16 +76,16 @@ export const FilterBar: React.FC<FilterBarProps> = ({
       {/* Toggle Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className={`px-3 py-2 border text-xs font-mono-code flex items-center gap-2 transition-all select-none ${
+        className={`px-3 py-2 border text-xs font-sans flex items-center gap-2 transition-all select-none ${
           isOpen || activeFilterCount > 0
-            ? 'bg-[#3df2ff]/20 border-[#3df2ff] text-white shadow-[0_0_15px_rgba(61,242,255,0.25)]'
+            ? 'bg-sq-accent/20 border-sq-accent text-white shadow-[0_0_15px_rgba(166,184,106,0.25)]'
             : 'bg-black/75 backdrop-blur-md border-white/20 text-white/70 hover:text-white hover:border-white/40'
         }`}
       >
-        <SlidersHorizontal className="w-3.5 h-3.5 text-[#3df2ff]" />
+        <SlidersHorizontal className="w-3.5 h-3.5 text-sq-accent" />
         <span>REGISTRY FILTER</span>
         {activeFilterCount > 0 && (
-          <span className="w-4 h-4 rounded-full bg-[#3df2ff] text-black font-bold text-[10px] flex items-center justify-center">
+          <span className="w-4 h-4 rounded-full bg-sq-accent text-black font-bold text-[10px] flex items-center justify-center">
             {activeFilterCount}
           </span>
         )}
@@ -95,7 +96,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
         <div className="absolute top-11 right-0 sm:left-0 sm:right-auto z-40 w-72 sm:w-88 bg-black/95 backdrop-blur-xl border border-white/20 p-4 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-200">
           <div className="flex items-center justify-between border-b border-white/10 pb-2.5">
             <div className="flex items-center gap-2">
-              <Filter className="w-3.5 h-3.5 text-[#3df2ff]" />
+              <Filter className="w-3.5 h-3.5 text-sq-accent" />
               <span className="text-xs font-mono-code font-bold text-white uppercase tracking-wider">
                 Filter Observations ({filteredCount}/{totalRegistryCount})
               </span>
@@ -121,7 +122,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
                   category: e.target.value as ObservationCategory | 'ALL',
                 })
               }
-              className="w-full bg-white/5 border border-white/15 text-xs text-white p-2 outline-none focus:border-[#3df2ff]"
+              className="w-full bg-white/5 border border-white/15 text-xs text-white p-2 outline-none focus:border-sq-accent"
             >
               {categories.map((c) => (
                 <option key={c.value} value={c.value} className="bg-neutral-900 text-white">
@@ -150,12 +151,12 @@ export const FilterBar: React.FC<FilterBarProps> = ({
                     }
                     className={`py-1.5 px-2 text-[10px] uppercase border transition-all text-left flex items-center justify-between ${
                       isSelected
-                        ? 'bg-white/20 border-[#3df2ff] text-white font-bold'
+                        ? 'bg-white/20 border-sq-accent text-white font-bold'
                         : 'bg-white/5 border-white/10 text-white/60 hover:text-white'
                     }`}
                   >
                     <span>{s.label}</span>
-                    {isSelected && <Check className="w-2.5 h-2.5 text-[#3df2ff]" />}
+                    {isSelected && <Check className="w-2.5 h-2.5 text-sq-accent" />}
                   </button>
                 );
               })}
@@ -181,12 +182,12 @@ export const FilterBar: React.FC<FilterBarProps> = ({
                     }
                     className={`py-1.5 px-2 text-[10px] uppercase border transition-all text-left flex items-center justify-between ${
                       isSelected
-                        ? 'bg-white/20 border-[#3df2ff] text-white font-bold'
+                        ? 'bg-white/20 border-sq-accent text-white font-bold'
                         : 'bg-white/5 border-white/10 text-white/60 hover:text-white'
                     }`}
                   >
                     <span>{m.label.split(' ')[0]}</span>
-                    {isSelected && <Check className="w-2.5 h-2.5 text-[#3df2ff]" />}
+                    {isSelected && <Check className="w-2.5 h-2.5 text-sq-accent" />}
                   </button>
                 );
               })}
@@ -212,12 +213,12 @@ export const FilterBar: React.FC<FilterBarProps> = ({
                     }
                     className={`py-1.5 px-2 text-[10px] uppercase border transition-all text-left flex items-center justify-between ${
                       isSelected
-                        ? 'bg-white/20 border-[#3df2ff] text-white font-bold'
+                        ? 'bg-white/20 border-sq-accent text-white font-bold'
                         : 'bg-white/5 border-white/10 text-white/60 hover:text-white'
                     }`}
                   >
                     <span>{d.label.split(' ')[0]}</span>
-                    {isSelected && <Check className="w-2.5 h-2.5 text-[#3df2ff]" />}
+                    {isSelected && <Check className="w-2.5 h-2.5 text-sq-accent" />}
                   </button>
                 );
               })}
@@ -234,7 +235,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
             </button>
             <button
               onClick={() => setIsOpen(false)}
-              className="px-3 py-1 bg-[#3df2ff] text-black text-xs font-bold uppercase hover:bg-white transition-all"
+              className="px-3 py-1 bg-sq-accent text-black text-xs font-bold uppercase hover:bg-white transition-all"
             >
               Apply Filter
             </button>

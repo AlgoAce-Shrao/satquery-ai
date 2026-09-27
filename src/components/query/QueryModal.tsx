@@ -97,12 +97,12 @@ export const QueryModal: React.FC<QueryModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="relative w-full max-w-3xl bg-[#0a0a0c] border border-white/20 p-6 sm:p-8 shadow-[0_0_80px_rgba(0,0,0,0.9)] flex flex-col gap-6 max-h-[90vh] overflow-y-auto">
+      <div className="relative w-full max-w-3xl bg-sq-surface border border-white/20 p-6 sm:p-8 shadow-[0_0_80px_rgba(17,18,15,0.9)] flex flex-col gap-6 max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-white/10 pb-4">
           <div className="space-y-1">
             <h3 className="text-xl font-bold uppercase tracking-tight text-white flex items-center gap-2">
-              <Globe2 className="w-5 h-5 text-[#3df2ff]" />
+              <Globe2 className="w-5 h-5 text-sq-accent" />
               <span>Geospatial Intelligence Query</span>
             </h3>
             <p className="text-[10px] font-mono-code text-white/40 uppercase tracking-widest">
@@ -119,7 +119,7 @@ export const QueryModal: React.FC<QueryModalProps> = ({
 
         {/* Input Form */}
         <form onSubmit={handleSubmit} className="space-y-3">
-          <label className="text-[10px] font-bold tracking-[0.2em] text-[#ff4e00] uppercase font-mono-code">
+          <label className="text-[10px] font-bold tracking-[0.2em] text-sq-amber uppercase font-mono-code">
             Natural Language Command
           </label>
           <div className="relative flex items-center">
@@ -128,12 +128,12 @@ export const QueryModal: React.FC<QueryModalProps> = ({
               value={inputVal}
               onChange={(e) => setInputVal(e.target.value)}
               placeholder="e.g. Find areas where vegetation decreased, or show flood events in Assam..."
-              className="w-full bg-black/60 border border-white/20 focus:border-[#3df2ff] px-4 py-3.5 text-sm sm:text-base font-serif-editorial italic text-white placeholder:text-white/30 focus:outline-none transition-all shadow-inner pr-28"
+              className="w-full bg-black/60 border border-white/20 focus:border-sq-accent px-4 py-3.5 text-sm sm:text-base font-serif-editorial italic text-white placeholder:text-white/30 focus:outline-none transition-all shadow-inner pr-28"
               autoFocus
             />
             <button
               type="submit"
-              className="absolute right-2 px-4 py-2 bg-[#3df2ff] hover:bg-white text-black font-black text-[10px] font-mono-code uppercase tracking-widest transition-all flex items-center gap-1.5 shadow-lg"
+              className="absolute right-2 px-4 py-2 bg-sq-accent hover:bg-white text-black font-black text-[10px] font-sans uppercase tracking-widest transition-all flex items-center gap-1.5 shadow-lg"
             >
               <span>Execute</span>
               <CornerDownLeft className="w-3 h-3" />
@@ -149,7 +149,7 @@ export const QueryModal: React.FC<QueryModalProps> = ({
           <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
             {PRESETS.map((group, gIdx) => (
               <div key={gIdx} className="space-y-1.5">
-                <span className="text-[9px] font-mono-code text-[#3df2ff] uppercase tracking-wider font-bold">
+                <span className="text-[9px] font-mono-code text-sq-accent uppercase tracking-wider font-bold">
                   // {group.category}
                 </span>
                 <div className="space-y-1">
@@ -165,7 +165,7 @@ export const QueryModal: React.FC<QueryModalProps> = ({
                       className="w-full text-left p-2.5 bg-white/[0.02] hover:bg-white/10 border border-white/10 text-xs text-white/80 hover:text-white transition-all font-serif-editorial italic flex items-center justify-between group"
                     >
                       <span>&ldquo;{q}&rdquo;</span>
-                      <ArrowRight className="w-3.5 h-3.5 text-white/20 group-hover:text-[#3df2ff] transition-colors shrink-0 ml-2" />
+                      <ArrowRight className="w-3.5 h-3.5 text-white/20 group-hover:text-sq-accent transition-colors shrink-0 ml-2" />
                     </button>
                   ))}
                 </div>

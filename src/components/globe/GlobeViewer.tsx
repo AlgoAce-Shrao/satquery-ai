@@ -155,7 +155,7 @@ export const GlobeViewer: React.FC<GlobeViewerProps> = ({
 
       // Continent Landmasses with luminous coastal strokes
       ctx.fillStyle = '#0f1d2e';
-      ctx.strokeStyle = 'rgba(61, 242, 255, 0.45)';
+      ctx.strokeStyle = 'rgba(166,184,106, 0.45)';
       ctx.lineWidth = 1.6;
 
       // Draw Approximate World Contours
@@ -197,7 +197,7 @@ export const GlobeViewer: React.FC<GlobeViewerProps> = ({
       drawWorld();
 
       // Precision Coordinate Graticule Grid
-      ctx.strokeStyle = 'rgba(61, 242, 255, 0.12)';
+      ctx.strokeStyle = 'rgba(166,184,106, 0.12)';
       ctx.lineWidth = 1;
       for (let x = 0; x < canvas.width; x += 128) {
         ctx.beginPath();
@@ -213,7 +213,7 @@ export const GlobeViewer: React.FC<GlobeViewerProps> = ({
       }
 
       // Constellation / Topo Points
-      ctx.fillStyle = 'rgba(61, 242, 255, 0.3)';
+      ctx.fillStyle = 'rgba(166,184,106, 0.3)';
       for (let i = 0; i < 450; i++) {
         const rx = Math.random() * canvas.width;
         const ry = Math.random() * canvas.height;
@@ -231,8 +231,8 @@ export const GlobeViewer: React.FC<GlobeViewerProps> = ({
       map: globeTexture,
       roughness: 0.75,
       metalness: 0.2,
-      color: new THREE.Color(0x0c1928),
-      emissive: new THREE.Color(0x03070f),
+      color: new THREE.Color(0x1c1d18),
+      emissive: new THREE.Color(0x11120f),
       emissiveIntensity: 0.7,
     });
     const globeMesh = new THREE.Mesh(globeGeometry, globeMaterial);
@@ -245,7 +245,7 @@ export const GlobeViewer: React.FC<GlobeViewerProps> = ({
       transparent: true,
       side: THREE.BackSide,
       uniforms: {
-        glowColor: { value: new THREE.Color(0x3df2ff) },
+        glowColor: { value: new THREE.Color(0xa6b86a) },
       },
       vertexShader: `
         varying vec3 vNormal;
@@ -269,7 +269,7 @@ export const GlobeViewer: React.FC<GlobeViewerProps> = ({
     // 4. Subtle Orbital Horizon Ring
     const horizonRingGeom = new THREE.RingGeometry(2.02, 2.14, 64);
     const horizonRingMat = new THREE.MeshBasicMaterial({
-      color: 0x3df2ff,
+      color: 0xa6b86a,
       side: THREE.DoubleSide,
       transparent: true,
       opacity: 0.16,
@@ -291,11 +291,11 @@ export const GlobeViewer: React.FC<GlobeViewerProps> = ({
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.95);
     scene.add(ambientLight);
 
-    const directionalLight1 = new THREE.DirectionalLight(0x3df2ff, 1.4);
+    const directionalLight1 = new THREE.DirectionalLight(0xa6b86a, 1.4);
     directionalLight1.position.set(6, 4, 4);
     scene.add(directionalLight1);
 
-    const directionalLight2 = new THREE.DirectionalLight(0xff4e00, 0.8);
+    const directionalLight2 = new THREE.DirectionalLight(0xd3a64a, 0.8);
     directionalLight2.position.set(-6, -3, -4);
     scene.add(directionalLight2);
 
@@ -499,17 +499,17 @@ export const GlobeViewer: React.FC<GlobeViewerProps> = ({
     }
 
     // Colors according to visualization mode
-    let themeColor = 0xff4e00; // Orange for difference/vegetation decline
+    let themeColor = 0xd3a64a; // Orange for difference/vegetation decline
     if (activeResult?.analysisType === 'WATER_EXPANSION') {
-      themeColor = 0x00d2ff;
+      themeColor = 0x6f8c8e;
     } else if (activeResult?.analysisType === 'URBAN_GROWTH') {
-      themeColor = 0xea00ff;
+      themeColor = 0xc4a484;
     }
 
     if (visualizationMode === 'BEFORE') {
-      themeColor = 0x22c55e; // Green baseline
+      themeColor = 0x7fa66a; // Green baseline
     } else if (visualizationMode === 'AFTER') {
-      themeColor = 0xd97706; // Amber degraded
+      themeColor = 0xd39b4a; // Amber degraded
     }
 
     // Render Markers for all results
@@ -520,7 +520,7 @@ export const GlobeViewer: React.FC<GlobeViewerProps> = ({
       // Center Pin Mesh
       const pinGeom = new THREE.SphereGeometry(isActive ? 0.055 : 0.035, 16, 16);
       const pinMat = new THREE.MeshBasicMaterial({
-        color: isActive ? themeColor : 0x3df2ff,
+        color: isActive ? themeColor : 0xa6b86a,
       });
       const pinMesh = new THREE.Mesh(pinGeom, pinMat);
       pinMesh.position.copy(pos);
@@ -530,7 +530,7 @@ export const GlobeViewer: React.FC<GlobeViewerProps> = ({
       // Outer Beacon Ring for all sites
       const baseRingGeom = new THREE.RingGeometry(0.04, 0.055, 32);
       const baseRingMat = new THREE.MeshBasicMaterial({
-        color: isActive ? themeColor : 0x3df2ff,
+        color: isActive ? themeColor : 0xa6b86a,
         side: THREE.DoubleSide,
         transparent: true,
         opacity: isActive ? 0.9 : 0.45,
@@ -628,7 +628,7 @@ export const GlobeViewer: React.FC<GlobeViewerProps> = ({
       {/* Top Live Camera Telemetry Badge */}
       <div className="absolute top-4 left-6 z-20 flex items-center gap-3 text-[10px] font-mono-code text-white/70 tracking-wider">
         <div className="flex items-center gap-2 bg-black/75 backdrop-blur-md px-3.5 py-1.5 border border-white/15 shadow-xl">
-          <span className="w-2 h-2 rounded-full bg-[#3df2ff] animate-pulse"></span>
+          <span className="w-2 h-2 rounded-full bg-sq-accent animate-pulse"></span>
           <span>
             NADIR: {Math.abs(liveTelemetry.lat).toFixed(2)}°{liveTelemetry.lat >= 0 ? 'N' : 'S'} /{' '}
             {Math.abs(liveTelemetry.lon).toFixed(2)}°{liveTelemetry.lon >= 0 ? 'E' : 'W'}
@@ -637,7 +637,7 @@ export const GlobeViewer: React.FC<GlobeViewerProps> = ({
         <div className="hidden sm:flex items-center gap-2 bg-black/75 backdrop-blur-md px-3.5 py-1.5 border border-white/15 shadow-xl">
           <span>ALT: {liveTelemetry.altitudeKm.toLocaleString()} KM</span>
         </div>
-        <div className="hidden md:flex items-center gap-2 bg-black/75 backdrop-blur-md px-3.5 py-1.5 border border-white/15 text-[#3df2ff] shadow-xl">
+        <div className="hidden md:flex items-center gap-2 bg-black/75 backdrop-blur-md px-3.5 py-1.5 border border-white/15 text-sq-accent shadow-xl">
           <span>PLATFORM: {activeResult?.satellite || 'Sentinel-2 / Landsat-8'}</span>
         </div>
       </div>
@@ -663,7 +663,7 @@ export const GlobeViewer: React.FC<GlobeViewerProps> = ({
           title="Reset Global Earth Perspective"
           className="px-3 py-1.5 bg-black/75 hover:bg-white/15 border border-white/15 text-white/80 hover:text-white transition-all text-xs flex items-center gap-1.5 shadow-lg active:scale-95"
         >
-          <RotateCcw className="w-3.5 h-3.5 text-[#3df2ff]" />
+          <RotateCcw className="w-3.5 h-3.5 text-sq-accent" />
           <span className="text-[10px] uppercase tracking-widest hidden sm:inline">Reset Earth</span>
         </button>
       </div>
@@ -671,7 +671,7 @@ export const GlobeViewer: React.FC<GlobeViewerProps> = ({
       {/* 3D WebGL Canvas */}
       <div className="relative w-full h-full flex items-center justify-center">
         {/* Soft atmospheric blue glow behind sphere */}
-        <div className="absolute w-[500px] h-[500px] sm:w-[650px] sm:h-[650px] rounded-full shadow-[0_0_140px_rgba(61,242,255,0.16)] pointer-events-none"></div>
+        <div className="absolute w-[500px] h-[500px] sm:w-[650px] sm:h-[650px] rounded-full shadow-[0_0_140px_rgba(166,184,106,0.16)] pointer-events-none"></div>
 
         <div
           ref={mountRef}
@@ -681,17 +681,17 @@ export const GlobeViewer: React.FC<GlobeViewerProps> = ({
         {/* Hover Tooltip when cursor is over a site pin on the 3D globe */}
         {hoveredResult && (
           <div
-            className="fixed z-40 pointer-events-none bg-black/90 backdrop-blur-md px-3 py-2 border border-[#3df2ff]/50 shadow-2xl text-xs"
+            className="fixed z-40 pointer-events-none bg-black/90 backdrop-blur-md px-3 py-2 border border-sq-accent/50 shadow-2xl text-xs"
             style={{
               left: `${mouseScreenPos.x + 16}px`,
               top: `${mouseScreenPos.y - 30}px`,
             }}
           >
             <div className="flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#3df2ff]"></span>
+              <span className="w-1.5 h-1.5 rounded-full bg-sq-accent"></span>
               <p className="font-bold text-white font-mono-code">{hoveredResult.regionName}</p>
             </div>
-            <p className="text-[10px] text-[#ff4e00] font-mono-code font-bold mt-0.5">
+            <p className="text-[10px] text-sq-amber font-mono-code font-bold mt-0.5">
               {hoveredResult.metric.name.split(' ')[0]}: {hoveredResult.metric.percentageChange > 0 ? '+' : ''}
               {hoveredResult.metric.percentageChange}%
             </p>

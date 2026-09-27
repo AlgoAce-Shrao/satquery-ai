@@ -66,11 +66,11 @@ export const ImageUploadModal: React.FC<ImageUploadModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-200 select-none">
-      <div className="relative w-full max-w-lg bg-[#0c0c10] border border-white/20 shadow-[0_0_60px_rgba(0,0,0,0.9)] p-6 space-y-5">
+      <div className="relative w-full max-w-lg bg-sq-surface border border-white/20 shadow-[0_0_60px_rgba(17,18,15,0.9)] p-6 space-y-5">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-white/10 pb-3">
           <div className="flex items-center gap-2.5">
-            <UploadCloud className="w-5 h-5 text-[#3df2ff]" />
+            <UploadCloud className="w-5 h-5 text-sq-accent" />
             <div>
               <h3 className="text-base font-bold text-white uppercase tracking-wider">
                 Ingest Satellite Imagery
@@ -95,7 +95,7 @@ export const ImageUploadModal: React.FC<ImageUploadModalProps> = ({
             onClick={() => setUploadType('BI_TEMPORAL')}
             className={`py-2 px-1 text-center transition-all ${
               uploadType === 'BI_TEMPORAL'
-                ? 'bg-[#ff4e00] text-black shadow'
+                ? 'bg-sq-amber text-black shadow'
                 : 'text-white/70 hover:text-white'
             }`}
           >
@@ -106,7 +106,7 @@ export const ImageUploadModal: React.FC<ImageUploadModalProps> = ({
             onClick={() => setUploadType('OPTICAL_SAR')}
             className={`py-2 px-1 text-center transition-all ${
               uploadType === 'OPTICAL_SAR'
-                ? 'bg-[#3df2ff] text-black shadow'
+                ? 'bg-sq-accent text-black shadow'
                 : 'text-white/70 hover:text-white'
             }`}
           >
@@ -117,7 +117,7 @@ export const ImageUploadModal: React.FC<ImageUploadModalProps> = ({
             onClick={() => setUploadType('SINGLE')}
             className={`py-2 px-1 text-center transition-all ${
               uploadType === 'SINGLE'
-                ? 'bg-[#10b981] text-black shadow'
+                ? 'bg-sq-positive text-black shadow'
                 : 'text-white/70 hover:text-white'
             }`}
           >
@@ -128,7 +128,7 @@ export const ImageUploadModal: React.FC<ImageUploadModalProps> = ({
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* File Upload Drop Area */}
           <div className="border-2 border-dashed border-white/20 p-5 text-center space-y-2 bg-white/5 hover:bg-white/10 transition-colors cursor-pointer">
-            <UploadCloud className="w-8 h-8 text-[#3df2ff] mx-auto animate-bounce" />
+            <UploadCloud className="w-8 h-8 text-sq-accent mx-auto animate-bounce" />
             <p className="text-xs font-mono-code text-white font-bold">
               Drop Satellite GeoTIFFs or click to browse
             </p>
@@ -196,13 +196,13 @@ export const ImageUploadModal: React.FC<ImageUploadModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white text-xs font-mono-code uppercase font-bold"
+              className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white text-xs font-sans uppercase font-bold"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-5 py-2 bg-[#3df2ff] hover:bg-[#3df2ff]/90 text-black text-xs font-mono-code uppercase font-bold flex items-center gap-1.5 shadow-lg"
+              className="px-5 py-2 bg-sq-accent hover:bg-sq-accent/90 text-black text-xs font-sans uppercase font-bold flex items-center gap-1.5 shadow-lg"
             >
               <Sparkles className="w-3.5 h-3.5" />
               <span>Launch Ingest & Analysis</span>

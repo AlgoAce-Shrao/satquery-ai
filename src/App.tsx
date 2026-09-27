@@ -22,7 +22,9 @@ import { ErrorBanner } from './components/query/ErrorBanner';
 import { UploadWizardModal } from './components/upload/UploadWizardModal';
 import { ActiveInputBanner } from './components/upload/ActiveInputBanner';
 import { InteractiveImageCanvas } from './components/upload/InteractiveImageCanvas';
+import { ImageInsightReport } from './components/upload/ImageInsightReport';
 import { LandingPage } from './components/landing/LandingPage';
+import { ConsoleLandingPage } from './components/console-landing/ConsoleLandingPage';
 import { QueryApiClient } from './services/api/queryApiClient';
 import { queryEngine } from './services/queryEngine';
 import { observationRegistry } from './services/observationRegistry';
@@ -30,12 +32,31 @@ import { satQueryOrchestrator } from './services/satQueryOrchestrator';
 import { QueryExecutionState, AnalysisResult, ExecutionPipelineStage } from './types/geospatial';
 import { ObservationFilter } from './types/observation';
 import { AnalysisInput } from './types/upload';
-import { Search, Layers, FileText, Settings, Compass, BarChart2 } from 'lucide-react';
+import { Search, Layers, FileText, Settings, Compass, BarChart2, Upload, ImagePlus } from 'lucide-react';
 
 const INITIAL_QUERY = 'Globally, find the 10 regions that experienced the largest decrease in vegetation over the last year and automatically tour through them from highest to lowest severity.';
 
+// Lightweight path routing (vercel.json already rewrites every non-API path to index.html).
+//   /         console landing page (new)
+//   /classic  original cinematic landing page (preserved)
+//   /console  the SatQuery console
+type AppView = 'LANDING' | 'CLASSIC_LANDING' | 'APP';
+
+const VIEW_PATHS: Record<AppView, string> = {
+  LANDING: '/',
+  CLASSIC_LANDING: '/classic',
+  APP: '/console',
+};
+
+function viewFromPath(pathname: string): AppView {
+  const path = pathname.replace(/\/+$/, '') || '/';
+  if (path === VIEW_PATHS.APP) return 'APP';
+  if (path === VIEW_PATHS.CLASSIC_LANDING) return 'CLASSIC_LANDING';
+  return 'LANDING';
+}
+
 export default function App() {
-  const [currentView, setCurrentView] = useState<'LANDING' | 'APP'>('LANDING');
+  const [currentView, setCurrentView] = useState<AppView>(() => viewFromPath(window.location.pathname));
 
   const [executionState, setExecutionState] = useState<QueryExecutionState>(() =>
     queryEngine.createInitialState(INITIAL_QUERY)
@@ -66,6 +87,49 @@ export default function App() {
   const [isUploadWizardOpen, setIsUploadWizardOpen] = useState(false);
   const [isPixelCanvasOpen, setIsPixelCanvasOpen] = useState(false);
 
+  // Uploaded-image report (its own full-screen view; the globe is untouched unless asked).
+  const [uploadReport, setUploadReport] = useState<{
+    input: AnalysisInput;
+    prompt: string;
+    status: 'ANALYZING' | 'READY';
+    result?: AnalysisResult;
+  } | null>(null);
+  const uploadRunRef = useRef(0);
+  // The last finished report, so it can be reopened after "Show on globe".
+  const [lastUploadReport, setLastUploadReport] = useState<typeof uploadReport>(null);
+
+  // Drag an image anywhere onto the console to open the upload wizard with it.
+  const [droppedFile, setDroppedFile] = useState<File | null>(null);
+  const [isDraggingFile, setIsDraggingFile] = useState(false);
+  const dragDepthRef = useRef(0);
+  const hasFiles = (e: React.DragEvent) => Array.from(e.dataTransfer?.types ?? []).includes('Files');
+  const consoleDropHandlers = {
+    onDragEnter: (e: React.DragEvent) => {
+      if (!hasFiles(e) || isUploadWizardOpen) return;
+      e.preventDefault();
+      dragDepthRef.current += 1;
+      setIsDraggingFile(true);
+    },
+    onDragOver: (e: React.DragEvent) => {
+      if (hasFiles(e) && !isUploadWizardOpen) e.preventDefault();
+    },
+    onDragLeave: () => {
+      dragDepthRef.current = Math.max(0, dragDepthRef.current - 1);
+      if (dragDepthRef.current === 0) setIsDraggingFile(false);
+    },
+    onDrop: (e: React.DragEvent) => {
+      if (!hasFiles(e) || isUploadWizardOpen) return;
+      e.preventDefault();
+      dragDepthRef.current = 0;
+      setIsDraggingFile(false);
+      const file = e.dataTransfer.files?.[0];
+      if (file) {
+        setDroppedFile(file);
+        setIsUploadWizardOpen(true);
+      }
+    },
+  };
+
   const [liveTelemetry, setLiveTelemetry] = useState<TelemetryData>({
     lat: -10.83,
     lon: -55.86,
@@ -85,11 +149,9 @@ export default function App() {
       tourTimerRef.current = null;
     }
 
-    // If an active user input is loaded, route query through SatQueryOrchestrator
-    if (activeAnalysisInput) {
-      handleLaunchUploadedAnalysis(activeAnalysisInput, queryText);
-      return;
-    }
+    // The console search always searches the globe. Questions about an uploaded image are
+    // asked from its report, so a new search ends the uploaded-image context.
+    if (activeAnalysisInput) setActiveAnalysisInput(null);
 
     const initialState = queryEngine.createInitialState(queryText);
     setExecutionState({
@@ -146,75 +208,53 @@ export default function App() {
   };
 
   /**
-   * Dispatches analysis of an uploaded input through SatQueryOrchestrator
+   * Analyzes an uploaded input and shows the result in the image report.
+   * Always produces a result (see satQueryOrchestrator.analyzeUpload).
    */
   const handleLaunchUploadedAnalysis = async (input: AnalysisInput, prompt: string) => {
+    const run = ++uploadRunRef.current;
+    setUploadReport({ input, prompt, status: 'ANALYZING' });
+    // Keep the globe still behind the report.
+    setExecutionState((prev) => (prev.isTourActive ? { ...prev, isTourActive: false } : prev));
+    // A short minimum keeps the progress view readable when analysis is instant.
+    const [result] = await Promise.all([
+      satQueryOrchestrator.analyzeUpload(input, prompt),
+      new Promise((resolve) => setTimeout(resolve, 1200)),
+    ]);
+    if (uploadRunRef.current !== run) return; // closed or superseded meanwhile
+    setUploadReport({ input, prompt, status: 'READY', result });
+  };
+
+  const closeUploadReport = () => {
+    uploadRunRef.current++;
+    setUploadReport(null);
+  };
+
+  /** Hands a finished upload result to the globe (only when the user asks). */
+  const handleShowUploadOnGlobe = () => {
+    if (!uploadReport?.result) return;
+    const { input, prompt, result } = uploadReport;
+    setLastUploadReport(uploadReport);
     if (tourTimerRef.current) {
       clearInterval(tourTimerRef.current);
       tourTimerRef.current = null;
     }
-
     setActiveAnalysisInput(input);
-    const plan = satQueryOrchestrator.planWorkflow(input, prompt);
-
     setExecutionState({
-      status: 'PROCESSING',
+      ...queryEngine.createInitialState(prompt),
+      status: 'COMPLETED',
       rawQuery: prompt,
-      category: 'ALL',
-      steps: plan.stages,
+      steps: [],
       currentStepIndex: 0,
-      results: [],
+      results: [result],
       activeResultIndex: 0,
       filterCount: 1,
-      observationId: `INGEST-${input.images.primary.fileName.slice(0, 8).toUpperCase()}`,
-      systemMessage: `Initiating agentic analysis pipeline: ${plan.recommendedWorkflow}...`,
+      observationId: result.siteCode || 'UPLOAD',
+      systemMessage: `Showing your image: ${result.headline}`,
       isTourActive: false,
     });
     setIsHUDVisible(true);
-
-    try {
-      const result = await satQueryOrchestrator.executeAnalysis(
-        input,
-        prompt,
-        (stage: ExecutionPipelineStage) => {
-          setExecutionState((prev) => {
-            const stepIndex = prev.steps.findIndex((s) => s.stage === stage.stage);
-            return {
-              ...prev,
-              currentStepIndex: stepIndex >= 0 ? stepIndex : prev.currentStepIndex + 1,
-              systemMessage: `Processing: ${stage.title} - ${stage.description}`,
-            };
-          });
-        }
-      );
-
-      setExecutionState({
-        status: 'COMPLETED',
-        rawQuery: prompt,
-        category: result.category || 'ALL',
-        steps: plan.stages,
-        currentStepIndex: plan.stages.length - 1,
-        results: [result],
-        activeResultIndex: 0,
-        filterCount: 1,
-        observationId: result.siteCode || 'INGEST-RESULT',
-        systemMessage: `Analysis complete: ${result.headline} (${result.confidence * 100}% confidence)`,
-        isTourActive: false,
-      });
-
-      // Auto-open appropriate modality viewer if relevant
-      if (input.mode === 'BI_TEMPORAL' && result.temporalComparison) {
-        setIsTemporalComparisonOpen(true);
-      } else if (input.mode === 'OPTICAL_SAR' && result.multimodalData) {
-        setIsMultimodalViewerOpen(true);
-      }
-    } catch (err: any) {
-      setExecutionState((prev) => ({
-        ...prev,
-        status: 'ERROR',
-        systemMessage: `Analysis failed: ${err.message || 'Unknown execution error'}`,
-      }));
-    }
+    setUploadReport(null);
   };
 
   const handleClearActiveInput = () => {
@@ -355,19 +395,44 @@ export default function App() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleToggleTour, handleNextSite, handlePreviousSite, isQueryModalOpen, isEvidenceModalOpen]);
 
+  const navigateTo = useCallback((view: AppView) => {
+    const path = VIEW_PATHS[view];
+    if (window.location.pathname !== path) {
+      window.history.pushState({ view }, '', path);
+    }
+    setCurrentView(view);
+    window.scrollTo(0, 0);
+  }, []);
+
+  // Keep the view in sync with browser back/forward.
+  useEffect(() => {
+    const onPopState = () => setCurrentView(viewFromPath(window.location.pathname));
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, []);
+
+  // Arriving directly at /console: start the default investigation, as the landing CTA would.
+  const didAutoStartRef = useRef(false);
+  useEffect(() => {
+    if (didAutoStartRef.current) return;
+    didAutoStartRef.current = true;
+    if (viewFromPath(window.location.pathname) === 'APP') runQuery(INITIAL_QUERY);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const handleLaunchMissionControl = (initialQuery?: string) => {
     const targetQuery = initialQuery && initialQuery.trim() ? initialQuery.trim() : INITIAL_QUERY;
-    setCurrentView('APP');
+    navigateTo('APP');
     runQuery(targetQuery);
   };
 
   const handleOpenUploadFromLanding = () => {
-    setCurrentView('APP');
+    navigateTo('APP');
     setIsUploadWizardOpen(true);
   };
 
   const handleReturnToLanding = () => {
-    setCurrentView('LANDING');
+    navigateTo('LANDING');
   };
 
   const activeResult: AnalysisResult | null =
@@ -377,6 +442,16 @@ export default function App() {
 
   if (currentView === 'LANDING') {
     return (
+      <ConsoleLandingPage
+        onOpenConsole={handleLaunchMissionControl}
+        onUploadImage={handleOpenUploadFromLanding}
+        onOpenClassicLanding={() => navigateTo('CLASSIC_LANDING')}
+      />
+    );
+  }
+
+  if (currentView === 'CLASSIC_LANDING') {
+    return (
       <LandingPage
         onLaunchMissionControl={handleLaunchMissionControl}
         onOpenUploadWizard={handleOpenUploadFromLanding}
@@ -385,9 +460,23 @@ export default function App() {
   }
 
   return (
-    <div className="h-screen w-screen bg-[#050506] text-white font-sans overflow-hidden flex flex-col p-0 md:p-1.5 lg:p-2">
+    <div className="h-screen w-screen bg-sq-base text-white font-sans overflow-hidden flex flex-col p-0 md:p-1.5 lg:p-2">
       {/* Outer Mission-Control Frame */}
-      <div className="flex-1 flex flex-col bg-[#050506] border-0 md:border-2 lg:border-4 border-[#18181f] overflow-hidden shadow-2xl relative">
+      <div
+        className="flex-1 flex flex-col bg-sq-base border-0 md:border-2 lg:border-4 border-sq-border overflow-hidden shadow-2xl relative"
+        {...consoleDropHandlers}
+      >
+        {/* Drop-to-upload overlay */}
+        {isDraggingFile && (
+          <div className="pointer-events-none absolute inset-0 z-[60] flex items-center justify-center bg-black/75 backdrop-blur-sm">
+            <div className="flex flex-col items-center gap-3 border-2 border-dashed border-sq-accent bg-sq-surface/90 px-10 py-8 text-center">
+              <ImagePlus className="h-10 w-10 text-sq-accent" />
+              <p className="text-lg font-bold text-white">Drop to analyze this image</p>
+              <p className="font-mono-code text-[11px] uppercase tracking-wider text-white/55">PNG · JPEG · WebP · GeoTIFF</p>
+            </div>
+          </div>
+        )}
+
         {/* Top Header with Embedded Query Bar and Filter Controls */}
         <Header
           observationId={executionState.observationId}
@@ -408,6 +497,7 @@ export default function App() {
           activeInput={activeAnalysisInput}
           onOpenWizard={() => setIsUploadWizardOpen(true)}
           onOpenPixelInspector={() => setIsPixelCanvasOpen(true)}
+          onOpenReport={lastUploadReport ? () => setUploadReport(lastUploadReport) : undefined}
           onClearInput={handleClearActiveInput}
         />
 
@@ -416,9 +506,17 @@ export default function App() {
           {/* Left Vertical Quick Access Toolbar */}
           <div className="absolute top-20 left-2 z-20 hidden xl:flex flex-col items-center gap-2 bg-black/80 backdrop-blur-md p-1.5 border border-white/15">
             <button
+              onClick={() => setIsUploadWizardOpen(true)}
+              title="Upload an image to analyze"
+              aria-label="Upload an image to analyze"
+              className="p-2 text-sq-accent hover:text-sq-accent-hover hover:bg-white/10 transition-all"
+            >
+              <Upload className="w-4 h-4" />
+            </button>
+            <button
               onClick={() => setIsQueryModalOpen(true)}
               title="Query Prompts (⌘K)"
-              className="p-2 text-white/60 hover:text-[#3df2ff] hover:bg-white/10 transition-all"
+              className="p-2 text-white/60 hover:text-sq-accent hover:bg-white/10 transition-all"
             >
               <Search className="w-4 h-4" />
             </button>
@@ -427,7 +525,7 @@ export default function App() {
               title="Toggle Result HUD"
               className={`p-2 transition-all ${
                 isHUDVisible
-                  ? 'text-[#3df2ff] bg-white/10'
+                  ? 'text-sq-accent bg-white/10'
                   : 'text-white/60 hover:text-white hover:bg-white/10'
               }`}
             >
@@ -436,14 +534,14 @@ export default function App() {
             <button
               onClick={() => setIsTemporalComparisonOpen(true)}
               title="Bi-Temporal Split Comparison"
-              className="p-2 text-white/60 hover:text-[#ff4e00] hover:bg-white/10 transition-all"
+              className="p-2 text-white/60 hover:text-sq-amber hover:bg-white/10 transition-all"
             >
               <Layers className="w-4 h-4" />
             </button>
             <button
               onClick={() => setIsMultimodalViewerOpen(true)}
               title="Multimodal Optical + SAR Fusion"
-              className="p-2 text-white/60 hover:text-[#0284c7] hover:bg-white/10 transition-all"
+              className="p-2 text-white/60 hover:text-sq-water hover:bg-white/10 transition-all"
             >
               <Compass className="w-4 h-4" />
             </button>
@@ -452,7 +550,7 @@ export default function App() {
               title="Evidence & Spectra"
               className={`p-2 transition-all ${
                 isEvidenceDrawerOpen
-                  ? 'text-[#3df2ff] bg-white/10'
+                  ? 'text-sq-accent bg-white/10'
                   : 'text-white/60 hover:text-white hover:bg-white/10'
               }`}
             >
@@ -606,7 +704,31 @@ export default function App() {
           onLaunchAnalysis={(input, prompt) => {
             handleLaunchUploadedAnalysis(input, prompt);
           }}
+          initialFile={droppedFile}
+          onInitialFileConsumed={() => setDroppedFile(null)}
         />
+
+        {/* Uploaded-image report */}
+        {uploadReport && (
+          <ImageInsightReport
+            input={uploadReport.input}
+            prompt={uploadReport.prompt}
+            status={uploadReport.status}
+            result={uploadReport.result}
+            onClose={closeUploadReport}
+            onAskFollowUp={(q) => handleLaunchUploadedAnalysis(uploadReport.input, q)}
+            onNewUpload={() => {
+              closeUploadReport();
+              setIsUploadWizardOpen(true);
+            }}
+            onShowOnGlobe={
+              uploadReport.result &&
+              !(uploadReport.result.location.lat === 0 && uploadReport.result.location.lon === 0)
+                ? handleShowUploadOnGlobe
+                : undefined
+            }
+          />
+        )}
 
         {/* Phase 3: Interactive Zoom & Pan Pixel Evidence Canvas */}
         {activeAnalysisInput && (

@@ -66,8 +66,8 @@ export const ScrollStoryOverlay: React.FC<ScrollStoryOverlayProps> = ({
         {/* Top Eyebrow / Classification */}
         <div className="pt-16 sm:pt-20">
           <div className="inline-flex items-center gap-2.5 px-3 py-1 bg-white/[0.04] border border-white/10 text-white/80 text-[11px] font-mono-code">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#3df2ff] animate-pulse" />
-            <span className="uppercase tracking-[0.25em] text-[#3df2ff] font-bold">
+            <span className="w-1.5 h-1.5 rounded-full bg-sq-accent animate-pulse" />
+            <span className="uppercase tracking-[0.25em] text-sq-accent font-bold">
               Autonomous Remote-Sensing Agent
             </span>
           </div>
@@ -76,7 +76,7 @@ export const ScrollStoryOverlay: React.FC<ScrollStoryOverlayProps> = ({
         {/* Hero Central Typography Reveal */}
         <div className="max-w-3xl space-y-4">
           <h1 className="text-5xl sm:text-7xl lg:text-8xl font-black uppercase tracking-tight text-white font-sans leading-[0.92]">
-            SatQuery <span className="text-[#3df2ff]">AI</span>
+            SatQuery <span className="text-sq-accent">AI</span>
           </h1>
           <p className="text-xl sm:text-2xl lg:text-3xl text-white/80 font-sans font-light tracking-tight max-w-xl">
             Turn satellite imagery into answers.
@@ -89,7 +89,7 @@ export const ScrollStoryOverlay: React.FC<ScrollStoryOverlayProps> = ({
         {/* Bottom Scroll Cue */}
         <div className="flex items-center justify-between font-mono-code text-[10px] text-white/40 border-t border-white/10 pt-4">
           <div className="flex items-center gap-2">
-            <ArrowDown className="w-3.5 h-3.5 text-[#3df2ff] animate-bounce" />
+            <ArrowDown className="w-3.5 h-3.5 text-sq-accent animate-bounce" />
             <span className="uppercase tracking-widest text-white/60">
               Scroll to observe Earth
             </span>
@@ -110,8 +110,8 @@ export const ScrollStoryOverlay: React.FC<ScrollStoryOverlayProps> = ({
           visibility: op1 > 0.01 ? 'visible' : 'hidden',
         }}
       >
-        <div className="max-w-xl space-y-4 bg-black/60 backdrop-blur-sm p-6 sm:p-8 border-l-2 border-[#3df2ff] pointer-events-auto">
-          <div className="flex items-center gap-2 text-[10px] font-mono-code text-[#3df2ff] uppercase tracking-widest font-bold">
+        <div className="max-w-xl space-y-4 bg-black/60 backdrop-blur-sm p-6 sm:p-8 border-l-2 border-sq-accent pointer-events-auto">
+          <div className="flex items-center gap-2 text-[10px] font-mono-code text-sq-accent uppercase tracking-widest font-bold">
             <Radio className="w-3.5 h-3.5" />
             <span>01 / Global Observation</span>
           </div>
@@ -130,11 +130,11 @@ export const ScrollStoryOverlay: React.FC<ScrollStoryOverlayProps> = ({
               <span>Active Satellites</span>
             </div>
             <div>
-              <span className="block text-[#3df2ff] font-bold text-sm">10m / px</span>
+              <span className="block text-sq-accent font-bold text-sm">10m / px</span>
               <span>Optical Resolution</span>
             </div>
             <div>
-              <span className="block text-[#10b981] font-bold text-sm">5-Day</span>
+              <span className="block text-sq-positive font-bold text-sm">5-Day</span>
               <span>Revisit Frequency</span>
             </div>
           </div>
@@ -151,8 +151,8 @@ export const ScrollStoryOverlay: React.FC<ScrollStoryOverlayProps> = ({
           visibility: op2 > 0.01 ? 'visible' : 'hidden',
         }}
       >
-        <div className="max-w-xl space-y-4 bg-black/60 backdrop-blur-sm p-6 sm:p-8 border-r-2 border-[#3df2ff] text-right pointer-events-auto">
-          <div className="flex items-center justify-end gap-2 text-[10px] font-mono-code text-[#3df2ff] uppercase tracking-widest font-bold">
+        <div className="max-w-xl space-y-4 bg-black/60 backdrop-blur-sm p-6 sm:p-8 border-r-2 border-sq-accent text-right pointer-events-auto">
+          <div className="flex items-center justify-end gap-2 text-[10px] font-mono-code text-sq-accent uppercase tracking-widest font-bold">
             <span>02 / Sensor Modality Fusion</span>
             <Activity className="w-3.5 h-3.5" />
           </div>
@@ -167,7 +167,7 @@ export const ScrollStoryOverlay: React.FC<ScrollStoryOverlayProps> = ({
 
           <div className="pt-2 flex items-center justify-end gap-6 font-mono-code text-[11px] text-white/50 border-t border-white/10">
             <div>
-              <span className="block text-[#3df2ff] font-bold text-sm">Sentinel-2 MSI</span>
+              <span className="block text-sq-accent font-bold text-sm">Sentinel-2 MSI</span>
               <span>13 Spectral Bands</span>
             </div>
             <div>
@@ -190,7 +190,7 @@ export const ScrollStoryOverlay: React.FC<ScrollStoryOverlayProps> = ({
       >
         <div className="max-w-lg space-y-3 bg-black/70 backdrop-blur-sm p-6 border border-white/15 pointer-events-auto">
           <div className="flex items-center justify-between font-mono-code text-[10px]">
-            <span className="text-[#3df2ff] uppercase font-bold tracking-wider">
+            <span className="text-sq-accent uppercase font-bold tracking-wider">
               03 / Regional Observation Lock
             </span>
             <span className="text-white/40">LAT: -10.83° S | LON: -55.86° W</span>
@@ -205,7 +205,7 @@ export const ScrollStoryOverlay: React.FC<ScrollStoryOverlayProps> = ({
           </p>
 
           <div className="pt-2 font-mono-code text-[10px] text-white/50 flex items-center gap-2">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#ff4e00] animate-ping" />
+            <span className="w-1.5 h-1.5 rounded-full bg-sq-amber animate-ping" />
             <span>Scanning radiometric difference footprint...</span>
           </div>
         </div>
@@ -225,8 +225,8 @@ export const ScrollStoryOverlay: React.FC<ScrollStoryOverlayProps> = ({
           {/* Header */}
           <div className="flex items-center justify-between border-b border-white/10 pb-3 font-mono-code">
             <div className="flex items-center gap-2 text-xs">
-              <span className="w-2 h-2 rounded-full bg-[#10b981]" />
-              <span className="text-[#3df2ff] uppercase font-bold tracking-wider">
+              <span className="w-2 h-2 rounded-full bg-sq-positive" />
+              <span className="text-sq-accent uppercase font-bold tracking-wider">
                 04 / Intelligence Generated
               </span>
             </div>
@@ -247,7 +247,7 @@ export const ScrollStoryOverlay: React.FC<ScrollStoryOverlayProps> = ({
           <div className="grid grid-cols-3 gap-3 font-mono-code text-center">
             <div className="p-3 bg-white/[0.03] border border-white/10 space-y-0.5">
               <span className="text-[10px] text-white/40 uppercase">Vegetation Delta</span>
-              <p className="text-2xl sm:text-3xl font-black text-[#ff4e00] tracking-tight">−18.4%</p>
+              <p className="text-2xl sm:text-3xl font-black text-sq-amber tracking-tight">−18.4%</p>
               <span className="text-[9px] text-white/50">Normalized NDVI</span>
             </div>
 
@@ -259,7 +259,7 @@ export const ScrollStoryOverlay: React.FC<ScrollStoryOverlayProps> = ({
 
             <div className="p-3 bg-white/[0.03] border border-white/10 space-y-0.5">
               <span className="text-[10px] text-white/40 uppercase">Agent Confidence</span>
-              <p className="text-2xl sm:text-3xl font-black text-[#10b981] tracking-tight">94%</p>
+              <p className="text-2xl sm:text-3xl font-black text-sq-positive tracking-tight">94%</p>
               <span className="text-[9px] text-white/50">Cross-Validated</span>
             </div>
           </div>
@@ -273,7 +273,7 @@ export const ScrollStoryOverlay: React.FC<ScrollStoryOverlayProps> = ({
 
             <button
               onClick={onLaunchApp}
-              className="w-full sm:w-auto px-6 py-3 bg-[#3df2ff] hover:bg-white text-black font-mono-code text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer shadow-[0_0_20px_rgba(61,242,255,0.3)]"
+              className="w-full sm:w-auto px-6 py-3 bg-sq-accent hover:bg-white text-black font-sans text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer shadow-[0_0_20px_rgba(166,184,106,0.3)]"
             >
               <span>Launch Mission Control</span>
               <Compass className="w-4 h-4" />

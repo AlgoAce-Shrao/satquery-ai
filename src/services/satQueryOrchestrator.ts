@@ -19,6 +19,8 @@ import { AnalysisProvider } from './providers/analysisProvider';
 import { MockAnalysisProvider } from './providers/mockAnalysisProvider';
 import { ColabMLAnalysisProvider } from './providers/colabMLAnalysisProvider';
 import { RealAnalysisProvider } from './providers/realAnalysisProvider';
+import { GeminiVisionProvider } from './providers/geminiVisionProvider';
+import { interpretLocally } from './basicImageInterpreter';
 
 export class SatQueryOrchestrator {
   private static instance: SatQueryOrchestrator;
@@ -26,6 +28,7 @@ export class SatQueryOrchestrator {
   private colabProvider: ColabMLAnalysisProvider;
   private realProvider: RealAnalysisProvider;
   private mockProvider: MockAnalysisProvider;
+  private visionProvider: GeminiVisionProvider;
   private hasConfiguredRemoteProvider: boolean;
   private hasConfiguredGateway: boolean;
 
@@ -35,6 +38,7 @@ export class SatQueryOrchestrator {
       (import.meta as any).env?.VITE_COLAB_ML_SERVER_URL;
     const gatewayUrl = (import.meta as any).env?.VITE_SPRING_BOOT_API_URL;
     this.mockProvider = new MockAnalysisProvider();
+    this.visionProvider = new GeminiVisionProvider();
     this.colabProvider = new ColabMLAnalysisProvider(configuredEndpoint);
     this.realProvider = new RealAnalysisProvider(gatewayUrl);
     this.hasConfiguredRemoteProvider = Boolean(configuredEndpoint);
@@ -144,6 +148,29 @@ export class SatQueryOrchestrator {
   }
 
   /**
+   * Analyzes a user upload for the image report. Never throws: the detailed vision
+   * analysis runs when the server has it configured; otherwise (or if it fails) an
+   * in-browser colour interpretation of the real pixels is returned, so every upload
+   * gets a result about the image the user actually provided.
+   */
+  public async analyzeUpload(
+    input: AnalysisInput,
+    query: string,
+    onProgressStage?: (stage: ExecutionPipelineStage) => void
+  ): Promise<AnalysisResult> {
+    const started = performance.now();
+    if (await this.visionProvider.isAvailable()) {
+      try {
+        return await this.visionProvider.execute(input, query, onProgressStage, this.classifyIntent(input, query));
+      } catch (error) {
+        console.warn('Detailed image analysis unavailable; using basic interpretation.', error);
+      }
+    }
+    const basic = await interpretLocally(input, query);
+    return this.visionProvider.buildResult(input, query, basic, Math.round(performance.now() - started));
+  }
+
+  /**
    * Executes the full orchestrated intelligence workflow for an uploaded input.
    */
   public async executeAnalysis(
@@ -155,6 +182,8 @@ export class SatQueryOrchestrator {
     // A demo must always produce a result — mock output is honestly labeled DEMO_DATA
     // (see mockAnalysisProvider.ts / dataStatusLabels.ts) rather than silently pretending
     // to be real, so falling back to it is truthful, not a fabrication.
+    const intent = this.classifyIntent(input, query);
+
     let activeProvider = this.currentProvider;
 
     if (activeProvider.type === 'REAL_RASTER_ENGINE') {
@@ -176,7 +205,6 @@ export class SatQueryOrchestrator {
     // 2. Execute through provider — if even a provider that just passed its own
     // availability check fails mid-request (network blip, cold-start race, malformed
     // response), fall back to mock rather than surfacing a dead-end error during a demo.
-    const intent = this.classifyIntent(input, query);
     try {
       return await activeProvider.execute(input, query, onProgressStage, intent);
     } catch (error) {

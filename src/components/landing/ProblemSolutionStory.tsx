@@ -47,11 +47,11 @@ export const ProblemSolutionStory: React.FC<ProblemSolutionStoryProps> = ({
   ];
 
   return (
-    <div className="relative bg-[#080b11] text-white py-24 sm:py-32 px-6 sm:px-12 lg:px-20 border-t border-white/10 z-10">
+    <div className="relative bg-sq-base text-white py-24 sm:py-32 px-6 sm:px-12 lg:px-20 border-t border-white/10 z-10">
       <div className="max-w-6xl mx-auto space-y-24">
         {/* Section Header */}
         <div className="space-y-4 max-w-3xl">
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/[0.04] border border-white/10 text-[#3df2ff] text-[11px] font-mono-code uppercase tracking-widest font-bold">
+          <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/[0.04] border border-white/10 text-sq-accent text-[11px] font-mono-code uppercase tracking-widest font-bold">
             <span>NASA-Grade Geospatial AI</span>
           </div>
           <h2 className="text-3xl sm:text-5xl font-black uppercase tracking-tight text-white font-sans">
@@ -70,7 +70,7 @@ export const ProblemSolutionStory: React.FC<ProblemSolutionStoryProps> = ({
           <div className="bg-white/[0.02] border border-white/10 p-8 space-y-6 flex flex-col justify-between">
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <span className="font-mono-code text-[11px] text-[#ff4e00] uppercase font-bold tracking-widest flex items-center gap-1.5">
+                <span className="font-mono-code text-[11px] text-sq-amber uppercase font-bold tracking-widest flex items-center gap-1.5">
                   <AlertTriangle className="w-3.5 h-3.5" />
                   The Legacy Pipeline
                 </span>
@@ -107,14 +107,14 @@ export const ProblemSolutionStory: React.FC<ProblemSolutionStoryProps> = ({
           </div>
 
           {/* SatQuery AI Orchestrated Pipeline */}
-          <div className="bg-[#0b1726]/80 border border-[#3df2ff]/40 p-8 space-y-6 flex flex-col justify-between relative shadow-[0_0_40px_rgba(61,242,255,0.06)]">
+          <div className="bg-sq-elevated/80 border border-sq-accent/40 p-8 space-y-6 flex flex-col justify-between relative shadow-[0_0_40px_rgba(166,184,106,0.06)]">
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <span className="font-mono-code text-[11px] text-[#3df2ff] uppercase font-bold tracking-widest flex items-center gap-1.5">
+                <span className="font-mono-code text-[11px] text-sq-accent uppercase font-bold tracking-widest flex items-center gap-1.5">
                   <Sparkles className="w-3.5 h-3.5" />
                   The SatQuery Solution
                 </span>
-                <span className="font-mono-code text-[10px] text-[#10b981] font-bold">Sub-Second Execution</span>
+                <span className="font-mono-code text-[10px] text-sq-positive font-bold">Sub-Second Execution</span>
               </div>
 
               <h3 className="text-2xl font-bold uppercase text-white font-sans">
@@ -126,21 +126,21 @@ export const ProblemSolutionStory: React.FC<ProblemSolutionStoryProps> = ({
               </p>
             </div>
 
-            <div className="space-y-3 font-mono-code text-xs text-white/90 border-t border-[#3df2ff]/20 pt-6">
+            <div className="space-y-3 font-mono-code text-xs text-white/90 border-t border-sq-accent/20 pt-6">
               <div className="flex items-center gap-3">
-                <CheckCircle2 className="w-5 h-5 text-[#3df2ff] shrink-0" />
-                <span>Plain-language query decomposition (Gemini 2.5)</span>
+                <CheckCircle2 className="w-5 h-5 text-sq-accent shrink-0" />
+                <span>Plain-language query decomposition</span>
               </div>
               <div className="flex items-center gap-3">
-                <CheckCircle2 className="w-5 h-5 text-[#3df2ff] shrink-0" />
+                <CheckCircle2 className="w-5 h-5 text-sq-accent shrink-0" />
                 <span>Specialist agents (Vision, Change, Geospatial)</span>
               </div>
               <div className="flex items-center gap-3">
-                <CheckCircle2 className="w-5 h-5 text-[#3df2ff] shrink-0" />
+                <CheckCircle2 className="w-5 h-5 text-sq-accent shrink-0" />
                 <span>Automated bi-temporal change delineation</span>
               </div>
               <div className="flex items-center gap-3">
-                <CheckCircle2 className="w-5 h-5 text-[#3df2ff] shrink-0" />
+                <CheckCircle2 className="w-5 h-5 text-sq-accent shrink-0" />
                 <span>Interactive Cesium 3D visual verification</span>
               </div>
             </div>
@@ -153,7 +153,7 @@ export const ProblemSolutionStory: React.FC<ProblemSolutionStoryProps> = ({
         <div className="space-y-8">
           <div className="border-b border-white/10 pb-4 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
             <div>
-              <span className="font-mono-code text-xs text-[#3df2ff] uppercase font-bold tracking-widest block">
+              <span className="font-mono-code text-xs text-sq-accent uppercase font-bold tracking-widest block">
                 Execution Workflow
               </span>
               <h3 className="text-2xl sm:text-3xl font-black uppercase text-white tracking-tight font-sans">
@@ -169,7 +169,7 @@ export const ProblemSolutionStory: React.FC<ProblemSolutionStoryProps> = ({
             {/* Step 1 */}
             <div className="p-5 bg-white/[0.02] border border-white/10 space-y-3">
               <div className="flex items-center justify-between text-xs">
-                <span className="text-[#3df2ff] font-bold">01 / PARSE</span>
+                <span className="text-sq-accent font-bold">01 / PARSE</span>
                 <Terminal className="w-4 h-4 text-white/40" />
               </div>
               <p className="text-white text-sm font-sans font-bold uppercase">Natural Language Intent</p>
@@ -181,7 +181,7 @@ export const ProblemSolutionStory: React.FC<ProblemSolutionStoryProps> = ({
             {/* Step 2 */}
             <div className="p-5 bg-white/[0.02] border border-white/10 space-y-3">
               <div className="flex items-center justify-between text-xs">
-                <span className="text-[#3df2ff] font-bold">02 / DISPATCH</span>
+                <span className="text-sq-accent font-bold">02 / DISPATCH</span>
                 <Cpu className="w-4 h-4 text-white/40" />
               </div>
               <p className="text-white text-sm font-sans font-bold uppercase">Specialist Agents</p>
@@ -193,7 +193,7 @@ export const ProblemSolutionStory: React.FC<ProblemSolutionStoryProps> = ({
             {/* Step 3 */}
             <div className="p-5 bg-white/[0.02] border border-white/10 space-y-3">
               <div className="flex items-center justify-between text-xs">
-                <span className="text-[#3df2ff] font-bold">03 / NAVIGATE</span>
+                <span className="text-sq-accent font-bold">03 / NAVIGATE</span>
                 <Globe2 className="w-4 h-4 text-white/40" />
               </div>
               <p className="text-white text-sm font-sans font-bold uppercase">3D Globe Fly-To</p>
@@ -205,7 +205,7 @@ export const ProblemSolutionStory: React.FC<ProblemSolutionStoryProps> = ({
             {/* Step 4 */}
             <div className="p-5 bg-white/[0.02] border border-white/10 space-y-3">
               <div className="flex items-center justify-between text-xs">
-                <span className="text-[#3df2ff] font-bold">04 / QUANTIFY</span>
+                <span className="text-sq-accent font-bold">04 / QUANTIFY</span>
                 <Scan className="w-4 h-4 text-white/40" />
               </div>
               <p className="text-white text-sm font-sans font-bold uppercase">Synthesized Insight</p>
@@ -221,7 +221,7 @@ export const ProblemSolutionStory: React.FC<ProblemSolutionStoryProps> = ({
         {/* ============================================================ */}
         <div className="p-8 sm:p-10 bg-black/80 border border-white/20 space-y-6">
           <div className="space-y-2">
-            <span className="font-mono-code text-xs text-[#3df2ff] uppercase font-bold tracking-widest block">
+            <span className="font-mono-code text-xs text-sq-accent uppercase font-bold tracking-widest block">
               Ask The Earth
             </span>
             <h3 className="text-2xl sm:text-3xl font-black uppercase text-white font-sans tracking-tight">
@@ -234,17 +234,17 @@ export const ProblemSolutionStory: React.FC<ProblemSolutionStoryProps> = ({
 
           <form onSubmit={handleQuerySubmit} className="space-y-4">
             <div className="relative flex items-center">
-              <Search className="absolute left-4 w-5 h-5 text-[#3df2ff]" />
+              <Search className="absolute left-4 w-5 h-5 text-sq-accent" />
               <input
                 type="text"
                 value={queryInput}
                 onChange={(e) => setQueryInput(e.target.value)}
                 placeholder="Ask about deforestation, flooding, wildfire scars, or urban growth..."
-                className="w-full bg-white/[0.04] border border-white/20 pl-12 pr-36 py-4 text-sm sm:text-base text-white placeholder-white/40 font-sans focus:outline-none focus:border-[#3df2ff] transition-all"
+                className="w-full bg-white/[0.04] border border-white/20 pl-12 pr-36 py-4 text-sm sm:text-base text-white placeholder-white/40 font-sans focus:outline-none focus:border-sq-accent transition-all"
               />
               <button
                 type="submit"
-                className="absolute right-2 px-5 py-2.5 bg-[#3df2ff] hover:bg-white text-black font-mono-code text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer shadow-[0_0_15px_rgba(61,242,255,0.25)]"
+                className="absolute right-2 px-5 py-2.5 bg-sq-accent hover:bg-sq-accent-hover text-black font-sans text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer shadow-[0_0_15px_rgba(166,184,106,0.25)]"
               >
                 <span>Execute</span>
                 <ArrowRight className="w-3.5 h-3.5" />

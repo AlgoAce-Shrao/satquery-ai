@@ -64,14 +64,14 @@ export const ChangeAnalysisCard: React.FC<ChangeAnalysisCardProps> = ({
     <div
       className={`p-4 border transition-all select-none space-y-3 ${
         isSelected
-          ? 'bg-[#0f1118] border-[#3df2ff] shadow-[0_0_25px_rgba(61,242,255,0.2)]'
-          : 'bg-[#08080c]/90 hover:bg-[#0c0d14] border-white/15 hover:border-white/30'
+          ? 'bg-sq-elevated border-sq-accent shadow-[0_0_25px_rgba(166,184,106,0.2)]'
+          : 'bg-sq-base/90 hover:bg-sq-surface border-white/15 hover:border-white/30'
       }`}
     >
       {/* Top Tag & Status Headline */}
       <div className="flex items-center justify-between border-b border-white/10 pb-2.5">
         <div className="flex items-center gap-2">
-          <span className="p-1 bg-[#ff4e00]/20 text-[#ff4e00] border border-[#ff4e00]/40 text-[9px] font-mono-code font-bold uppercase">
+          <span className="p-1 bg-sq-amber/20 text-sq-amber border border-sq-amber/40 text-[9px] font-mono-code font-bold uppercase">
             CHANGE DETECTED
           </span>
           <span className="text-[10px] font-mono-code text-white/50 font-bold">{siteCode}</span>
@@ -82,12 +82,12 @@ export const ChangeAnalysisCard: React.FC<ChangeAnalysisCardProps> = ({
             className={`text-[9px] font-mono-code px-2 py-0.5 uppercase font-bold border ${
               isIncrease
                 ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40'
-                : 'bg-[#ff4e00]/20 text-[#ff4e00] border-[#ff4e00]/40'
+                : 'bg-sq-critical/20 text-sq-critical border-sq-critical/40'
             }`}
           >
             {changeStatusLabel}
           </span>
-          <span className="text-[9px] font-mono-code text-[#3df2ff] font-bold">
+          <span className="text-[9px] font-mono-code text-sq-accent font-bold">
             {Math.round(confidence * 100)}% Conf
           </span>
         </div>
@@ -101,7 +101,7 @@ export const ChangeAnalysisCard: React.FC<ChangeAnalysisCardProps> = ({
         </div>
         <div>
           <span className="text-[9px] text-white/40 uppercase block">Temporal Range</span>
-          <span className="text-[#3df2ff] font-bold text-[10px]">
+          <span className="text-sq-accent font-bold text-[10px]">
             {observationPeriod.beforeDate.slice(0, 7)} → {observationPeriod.afterDate.slice(0, 7)}
           </span>
         </div>
@@ -113,7 +113,7 @@ export const ChangeAnalysisCard: React.FC<ChangeAnalysisCardProps> = ({
           {isPositive ? (
             <TrendingUp className="w-4 h-4 text-cyan-400 shrink-0" />
           ) : (
-            <TrendingDown className="w-4 h-4 text-[#ff4e00] shrink-0" />
+            <TrendingDown className="w-4 h-4 text-sq-critical shrink-0" />
           )}
           <span>{regionName} ({metric.percentageChange > 0 ? '+' : ''}{metric.percentageChange}%)</span>
         </h4>
@@ -124,7 +124,7 @@ export const ChangeAnalysisCard: React.FC<ChangeAnalysisCardProps> = ({
 
       {/* AI Inference Layer */}
       <div className="bg-white/5 p-2.5 border border-white/10 space-y-1">
-        <div className="flex items-center gap-1 text-[9px] font-mono-code text-[#3df2ff] font-bold uppercase">
+        <div className="flex items-center gap-1 text-[9px] font-mono-code text-sq-accent font-bold uppercase">
           <Bot className="w-3 h-3" />
           <span>AI Inference</span>
         </div>
@@ -158,13 +158,13 @@ export const ChangeAnalysisCard: React.FC<ChangeAnalysisCardProps> = ({
           onClick={() => onViewOnMap(result)}
           className="py-2 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all active:scale-95"
         >
-          <Compass className="w-3.5 h-3.5 text-[#3df2ff]" />
+          <Compass className="w-3.5 h-3.5 text-sq-accent" />
           <span>View on Map</span>
         </button>
 
         <button
           onClick={() => onOpenComparison(result)}
-          className="py-2 bg-[#ff4e00] hover:bg-[#ff4e00]/90 text-black font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all active:scale-95 shadow"
+          className="py-2 bg-sq-amber hover:bg-sq-amber/90 text-black font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all active:scale-95 shadow"
         >
           <SlidersHorizontal className="w-3.5 h-3.5" />
           <span>Compare Split</span>

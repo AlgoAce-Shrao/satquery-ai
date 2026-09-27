@@ -31,7 +31,9 @@ export type ModalityType = 'OPTICAL' | 'SAR' | 'MULTIMODAL';
 // PUBLIC_DATA: sourced from the public satellite benchmark catalogue.
 // DEMO_DATA: fabricated/simulated for demonstration (no real computation behind it).
 // USER_RASTER_ANALYSIS: real rule-based pixel analysis computed from a user-uploaded image.
-export type DataStatus = 'PUBLIC_DATA' | 'DEMO_DATA' | 'USER_RASTER_ANALYSIS';
+// AI_VISION_ANALYSIS: a vision-language model's interpretation of a user-uploaded image
+//   (visual estimates, not pixel measurements).
+export type DataStatus = 'PUBLIC_DATA' | 'DEMO_DATA' | 'USER_RASTER_ANALYSIS' | 'AI_VISION_ANALYSIS';
 export type ObservationDataStatus = DataStatus;
 
 export interface SpectralBandData {

@@ -53,7 +53,7 @@ export const EvidenceDrawer: React.FC<EvidenceDrawerProps> = ({
         <div className="flex items-center justify-between border-b border-white/10 pb-3">
           <div>
             <p className="text-[10px] tracking-[0.3em] text-white/40 uppercase font-bold">Spectral & AI Evidence</p>
-            <p className="text-xs font-mono-code text-[#3df2ff] font-bold">
+            <p className="text-xs font-mono-code text-sq-accent font-bold">
               {siteCode} • {country}
             </p>
           </div>
@@ -78,7 +78,7 @@ export const EvidenceDrawer: React.FC<EvidenceDrawerProps> = ({
         {/* Region & Headline */}
         <div>
           <div className="flex items-center gap-2">
-            <span className="text-[9px] font-mono-code px-2 py-0.5 bg-[#ff4e00]/20 text-[#ff4e00] border border-[#ff4e00]/30 uppercase font-bold tracking-wider">
+            <span className="text-[9px] font-mono-code px-2 py-0.5 bg-sq-amber/20 text-sq-amber border border-sq-amber/30 uppercase font-bold tracking-wider">
               {metric.severity} SEVERITY
             </span>
             <span className="text-[9px] font-mono-code px-2 py-0.5 bg-white/10 text-white/80 border border-white/15 uppercase">
@@ -98,7 +98,7 @@ export const EvidenceDrawer: React.FC<EvidenceDrawerProps> = ({
             </span>
             <span className="text-xs font-mono-code text-white/50">{metric.name.split(' ')[0]}</span>
           </div>
-          <p className="text-xs text-[#ff4e00] font-serif-editorial italic leading-tight">&ldquo;{headline}&rdquo;</p>
+          <p className="text-xs text-sq-amber font-serif-editorial italic leading-tight">&ldquo;{headline}&rdquo;</p>
           <p className="text-[10px] font-mono-code text-white/40">Area footprint: {areaAffectedSqKm.toLocaleString()} km²</p>
         </div>
 
@@ -111,7 +111,7 @@ export const EvidenceDrawer: React.FC<EvidenceDrawerProps> = ({
           </div>
           <div className="space-y-1 border-l border-white/10 pl-4">
             <p className="text-[10px] text-white/40 uppercase tracking-wider">Post-Event</p>
-            <p className="text-2xl font-bold text-[#ff4e00]">{metric.afterValue.toFixed(2)}</p>
+            <p className="text-2xl font-bold text-sq-amber">{metric.afterValue.toFixed(2)}</p>
             <p className="text-[10px] text-white/40">{observationPeriod.afterLabel}</p>
           </div>
         </div>
@@ -121,10 +121,10 @@ export const EvidenceDrawer: React.FC<EvidenceDrawerProps> = ({
           <div className="border-t border-white/10 pt-4 space-y-2 font-mono-code">
             <div className="flex items-center justify-between">
               <span className="text-[10px] text-white/40 uppercase font-bold flex items-center gap-1.5">
-                <Bot className="w-3.5 h-3.5 text-[#3df2ff]" />
+                <Bot className="w-3.5 h-3.5 text-sq-accent" />
                 <span>Agent Execution Trace</span>
               </span>
-              <span className="text-[9px] text-[#3df2ff]">
+              <span className="text-[9px] text-sq-accent">
                 Confidence: {Math.round(agentTrace.confidence * 100)}%
               </span>
             </div>
@@ -135,7 +135,7 @@ export const EvidenceDrawer: React.FC<EvidenceDrawerProps> = ({
               </div>
               <div className="flex justify-between text-[10px]">
                 <span className="text-white/50">Specialist Agent:</span>
-                <span className="text-[#3df2ff]">{agentTrace.agent}</span>
+                <span className="text-sq-accent">{agentTrace.agent}</span>
               </div>
               <div className="flex justify-between text-[10px]">
                 <span className="text-white/50">Vision Models:</span>
@@ -169,7 +169,7 @@ export const EvidenceDrawer: React.FC<EvidenceDrawerProps> = ({
               </span>
               <button
                 onClick={onOpenEvidenceModal}
-                className="text-[9px] font-mono-code text-[#3df2ff] hover:underline flex items-center gap-1 uppercase"
+                className="text-[9px] font-sans text-sq-accent hover:underline flex items-center gap-1 uppercase"
               >
                 <span>Full Chart</span>
                 <ExternalLink className="w-2.5 h-2.5" />
@@ -191,7 +191,7 @@ export const EvidenceDrawer: React.FC<EvidenceDrawerProps> = ({
                         style={{ width: `${Math.min(100, band.beforeReflectance * 180)}%` }}
                       ></div>
                     </div>
-                    <span className="text-[#ff4e00] w-10">A: {band.afterReflectance.toFixed(3)}</span>
+                    <span className="text-sq-amber w-10">A: {band.afterReflectance.toFixed(3)}</span>
                   </div>
                 </div>
               ))}

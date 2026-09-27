@@ -69,19 +69,19 @@ const DomainRow: React.FC<DomainRowProps> = ({ dom, flip, onSelect }) => {
           >
             <Icon className="w-4.5 h-4.5" />
           </div>
-          <h3 className="text-sm font-mono-code font-semibold uppercase tracking-wider text-[#E8E4D8]">
+          <h3 className="text-sm font-mono-code font-semibold uppercase tracking-wider text-sq-text">
             {dom.title}
           </h3>
         </div>
-        <p className="text-base text-[#96978D] font-sans max-w-md">{dom.desc}</p>
-        <div className="pt-1 text-[11px] font-mono-code text-[#96978D] hover:text-[#C88A45] transition-colors flex items-center gap-1">
+        <p className="text-base text-sq-secondary font-sans max-w-md">{dom.desc}</p>
+        <div className="pt-1 text-[11px] font-mono-code text-sq-secondary hover:text-sq-amber transition-colors flex items-center gap-1">
           <span>&rarr; Try: "{dom.query.slice(0, 46)}..."</span>
         </div>
       </div>
 
       <div className={`md:col-span-5 ${flip ? 'md:order-1' : ''}`}>
         <div
-          className="h-28 rounded-xs border border-white/10 flex items-center justify-between px-5 font-mono-code text-[10px] text-[#96978D] uppercase tracking-wider"
+          className="h-28 rounded-xs border border-white/10 flex items-center justify-between px-5 font-mono-code text-[10px] text-sq-secondary uppercase tracking-wider"
           style={{ background: `linear-gradient(135deg, ${dom.accent}14, transparent)` }}
         >
           <span>{dom.indices}</span>
@@ -99,7 +99,7 @@ export const ApplicationsSection: React.FC<ApplicationsSectionProps> = ({ onSele
       title: 'AGRICULTURE',
       desc: 'Observe crop canopy over a growing season to identify vigor and drought-stress patterns.',
       query: 'Assess crop NDVI vigor and drought stress in San Joaquin Valley',
-      accent: '#7F8C63',
+      accent: '#A6B86A',
       indices: 'NDVI',
     },
     {
@@ -107,7 +107,7 @@ export const ApplicationsSection: React.FC<ApplicationsSectionProps> = ({ onSele
       title: 'DISASTER RESPONSE',
       desc: 'Compare before/after passes to understand flood extent or wildfire scar boundaries.',
       query: 'Delineate flood inundation in Assam Valley using SAR radar',
-      accent: '#B85C43',
+      accent: '#B85C4A',
       indices: 'SAR / NBR',
     },
     {
@@ -139,23 +139,23 @@ export const ApplicationsSection: React.FC<ApplicationsSectionProps> = ({ onSele
       title: 'INFRASTRUCTURE',
       desc: 'Watch construction progress and road-corridor development between observations.',
       query: 'Track transport infrastructure construction progress in NEOM',
-      accent: '#C88A45',
+      accent: '#D3A64A',
       indices: 'Optical',
     },
   ];
 
   return (
-    <section className="relative py-28 sm:py-36 px-6 sm:px-12 lg:px-20 text-[#E8E4D8] z-10 border-t border-white/10 bg-gradient-to-b from-black/20 via-[#080907]/80 to-black/30 backdrop-blur-[2px]">
+    <section className="relative py-28 sm:py-36 px-6 sm:px-12 lg:px-20 text-sq-text z-10 border-t border-white/10 bg-gradient-to-b from-black/20 via-sq-base/80 to-black/30 backdrop-blur-[2px]">
       <div className="max-w-5xl mx-auto space-y-20">
         <div className="space-y-3 max-w-3xl">
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#121410] border border-white/10 text-[#96978D] text-[10px] font-mono-code rounded-xs">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#C88A45]" />
-            <span className="uppercase tracking-[0.18em] text-[#C88A45] font-medium">
+          <div className="inline-flex items-center gap-2 px-3 py-1 bg-sq-surface border border-white/10 text-sq-secondary text-[10px] font-mono-code rounded-xs">
+            <span className="w-1.5 h-1.5 rounded-full bg-sq-amber" />
+            <span className="uppercase tracking-[0.18em] text-sq-amber font-medium">
               Real-World Applications
             </span>
           </div>
-          <h2 className="text-3xl sm:text-5xl font-bold uppercase tracking-tight text-[#E8E4D8] font-sans">
-            Built for the questions that <span className="text-[#C88A45]">matter.</span>
+          <h2 className="text-3xl sm:text-5xl font-bold uppercase tracking-tight text-sq-text font-sans">
+            Built for the questions that <span className="text-sq-amber">matter.</span>
           </h2>
         </div>
 

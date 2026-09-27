@@ -14,6 +14,8 @@ import {
 } from './observation';
 
 export * from './observation';
+export type { VisionAnalysis, VisionRegion } from '../../server/vision/geminiVision';
+import type { VisionAnalysis } from '../../server/vision/geminiVision';
 
 export type AnalysisType =
   | 'VEGETATION_CHANGE'
@@ -68,6 +70,8 @@ export interface SpatialEvidenceItem {
   description?: string;
   sourceSensor?: string;
   metricDelta?: string;
+  /** Location on the uploaded image, [ymin, xmin, ymax, xmax] normalised to 0–1 */
+  imageBox?: [number, number, number, number];
 }
 
 export interface TemporalComparisonData {
@@ -173,6 +177,8 @@ export interface AnalysisResult {
   executionPipeline?: ExecutionPipelineStage[];
   agentTrace?: AgentExecutionTrace;
   rawObservation?: Observation;
+  /** Structured output of the vision model, for AI_VISION_ANALYSIS results */
+  visionAnalysis?: VisionAnalysis;
 }
 
 export interface ProcessStep {

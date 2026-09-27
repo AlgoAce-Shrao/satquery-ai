@@ -28,13 +28,13 @@ export const ActiveQueryAside: React.FC<ActiveQueryAsideProps> = ({
         {/* Active Query Section */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <label className="text-[10px] font-bold tracking-[0.2em] text-[#ff4e00] uppercase flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#ff4e00] animate-ping"></span>
+            <label className="text-[10px] font-bold tracking-[0.2em] text-sq-amber uppercase flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-sq-amber animate-ping"></span>
               Active Query
             </label>
             <button
               onClick={onOpenQueryModal}
-              className="text-[9px] font-mono-code uppercase tracking-widest text-[#3df2ff] hover:underline"
+              className="text-[9px] font-sans uppercase tracking-widest text-sq-accent hover:underline"
             >
               [Change]
             </button>
@@ -58,7 +58,7 @@ export const ActiveQueryAside: React.FC<ActiveQueryAsideProps> = ({
                 <div
                   className={`w-2 h-2 rounded-full transition-all ${
                     status === 'PROCESSING' || status === 'COMPLETED'
-                      ? 'bg-[#3df2ff] shadow-[0_0_8px_#3df2ff]'
+                      ? 'bg-sq-accent shadow-[0_0_8px_#A6B86A]'
                       : 'bg-white/20'
                   }`}
                 ></div>
@@ -66,7 +66,7 @@ export const ActiveQueryAside: React.FC<ActiveQueryAsideProps> = ({
                   Intent: <span className="text-white font-semibold">{structuredQuery.intent}</span>
                 </span>
               </div>
-              <span className="text-[10px] text-[#3df2ff]/90 uppercase font-bold">
+              <span className="text-[10px] text-sq-accent/90 uppercase font-bold">
                 {status === 'IDLE' ? 'Ready' : 'OK'}
               </span>
             </div>
@@ -77,9 +77,9 @@ export const ActiveQueryAside: React.FC<ActiveQueryAsideProps> = ({
                 <div
                   className={`w-2 h-2 rounded-full transition-all ${
                     steps[1]?.status === 'COMPLETED'
-                      ? 'bg-[#3df2ff] shadow-[0_0_8px_#3df2ff]'
+                      ? 'bg-sq-accent shadow-[0_0_8px_#A6B86A]'
                       : steps[1]?.status === 'RUNNING'
-                      ? 'bg-[#ff4e00] animate-ping'
+                      ? 'bg-sq-amber animate-ping'
                       : 'bg-white/20'
                   }`}
                 ></div>
@@ -98,9 +98,9 @@ export const ActiveQueryAside: React.FC<ActiveQueryAsideProps> = ({
                 <div
                   className={`w-2 h-2 rounded-full transition-all ${
                     steps[2]?.status === 'COMPLETED'
-                      ? 'bg-[#3df2ff] shadow-[0_0_8px_#3df2ff]'
+                      ? 'bg-sq-accent shadow-[0_0_8px_#A6B86A]'
                       : steps[2]?.status === 'RUNNING'
-                      ? 'bg-[#ff4e00] animate-ping'
+                      ? 'bg-sq-amber animate-ping'
                       : 'bg-white/20'
                   }`}
                 ></div>
@@ -119,7 +119,7 @@ export const ActiveQueryAside: React.FC<ActiveQueryAsideProps> = ({
                 <div
                   className={`w-2 h-2 rounded-full transition-all ${
                     steps[3]?.status === 'COMPLETED'
-                      ? 'bg-[#3df2ff] shadow-[0_0_8px_#3df2ff]'
+                      ? 'bg-sq-accent shadow-[0_0_8px_#A6B86A]'
                       : 'bg-white/20'
                   }`}
                 ></div>
@@ -144,7 +144,7 @@ export const ActiveQueryAside: React.FC<ActiveQueryAsideProps> = ({
                 onClick={() => onSelectSuggestedQuery(q)}
                 className={`w-full text-left p-2 border transition-all text-[11px] leading-snug font-serif-editorial italic ${
                   rawQuery === q
-                    ? 'bg-[#ff4e00]/10 border-[#ff4e00]/50 text-[#ff4e00]'
+                    ? 'bg-sq-amber/10 border-sq-amber/50 text-sq-amber'
                     : 'bg-white/[0.02] border-white/10 text-white/60 hover:text-white hover:border-white/25 hover:bg-white/5'
                 }`}
               >
@@ -159,7 +159,7 @@ export const ActiveQueryAside: React.FC<ActiveQueryAsideProps> = ({
       <div className="mt-6 p-4 bg-white/5 rounded-none border border-white/10 backdrop-blur-sm">
         <div className="flex items-center justify-between mb-1.5">
           <p className="text-[10px] text-white/40 uppercase tracking-widest font-mono-code font-bold">System Message</p>
-          <span className="text-[9px] font-mono-code text-[#3df2ff]">EO-ANALYSIS-V1</span>
+          <span className="text-[9px] font-mono-code text-sq-accent">EO-ANALYSIS-V1</span>
         </div>
         <p className="text-xs leading-relaxed text-white/70 font-sans">
           {systemMessage}
